@@ -8,29 +8,20 @@
           <th v-for="col in headers" :key="col" 
             :style="col.headerStyle">
             {{ col.title }}
-          </th>
-        </tr>
-        <tr>
-          <th v-for="col in headers" :key="col" 
-            :style="col.headerStyle">
-            {{ col.title }}
-          </th>
-        </tr>
-        <tr>
-          <th v-for="col in headers" :key="col" 
-            :style="col.headerStyle">
-            {{ col.title }}
+            <svg-icon type="mdi" :path="mdiChevronUp" />
           </th>
         </tr>
       </thead>
+
       <tfoot>
         <tr>
           <td v-for="col in headers" :key="col"
-            :style="col.headerStyle">
+            :style="col.bodyStyle">
             {{ col.title }}
           </td>
         </tr>
       </tfoot>
+
       <tbody>
         <tr>
           <td :colspan="headers.length">
@@ -55,6 +46,7 @@
 
 <script>
 import { ref, reactive, computed, watch, onMounted } from 'vue';
+import { mdiChevronUp } from '@mdi/js';
 
 export default {
   components: {
@@ -118,6 +110,9 @@ export default {
     }
 
     return {
+      //import
+      mdiChevronUp,
+
       //refs
       mainDiv,
       
