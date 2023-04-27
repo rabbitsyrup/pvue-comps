@@ -7,7 +7,7 @@
             {{ title }}
             <svg-icon type="mdi"
               style="float: right;" 
-              :path="mdiClose" 
+              :path="mdi.mdiClose" 
               @click="close"/>
           </div>
 
@@ -20,59 +20,57 @@
   </Teleport>
 </template>
 
-<script>
+<script setup>
 import { computed } from 'vue';
-import { mdiClose } from '@mdi/js';
+import * as mdi from '@mdi/js';
 
-export default {
-  emits: [
-    'update:show'
-  ],
-  props: {
-    title: {
-      type: String,
-      default: "Title"
-    },
-    width: Number,
-    show: Boolean,
+defineExpose({
+  close,
+});
+
+const emit = defineEmits([
+  'update:show'
+]);
+
+const props = defineProps({
+  title: {
+    type: String,
+    default: "Title"
   },
-  setup(props, { emit }) {
-    const show = computed({
-      get() {
-        return props.show
-      },
-      set(value) {
-        emit('update:show', value)
-      }
-    });
+  width: Number,
+  show: Boolean,
+  top: Number,
+  left: Number,
+});
 
-    function close() {
-      show.value = false;
-    }
-
-    return {
-      //import
-      mdiClose,
-
-      //props
-      containerStyle: {width: props.width + 'px'},
-
-      //computed (v-model)
-      show,
-
-      //function
-      close,
-    }
+const show = computed({
+  get() {
+    return props.show
   },
+  set(value) {
+    emit('update:show', value)
+  }
+});
+
+const containerStyle = computed(() => { 
+  return { 
+    width: props.width + 'px',
+    top: props.top + 'px',
+    left: props.left + 'px'
+  } 
+});
+
+function close() {
+  show.value = false;
 }
 </script>
 
 <style scoped>
 .modal-mask {
-  position: fixed;
-  z-index: 9998;
   top: 0;
   left: 0;
+  position: fixed;
+  z-index: 9998;
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
@@ -81,6 +79,7 @@ export default {
 }
 
 .modal-container {
+  position: absolute;
   margin: auto;
   background-color: grey;
   border-radius: 15px;
@@ -95,7 +94,7 @@ export default {
 }
 
 .modal-body {
-  margin: 5px;
+  margin: 10px;
 }
 
 /* modal Transition */

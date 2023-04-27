@@ -5,22 +5,16 @@
     :height="height"
   >
   </PGrid>
-  <svg-icon type="mdi" :path="mdi.mdiMagnify" @click="openDialog" />
-  <PFilterDialog ref="dialog"></PFilterDialog>
 </template>
 
 <script>
-import * as mdi from '@mdi/js';
 import PGrid from '@/components/PGrid/PGrid.vue';
-import PFilterDialog from '@/components/PGrid/PFilterDialog.vue';
 
 export default {
   components: {
     PGrid,
-    PFilterDialog,
   },
   data: () => ({
-    mdi,
     data: [
       {no: 1, name: 'A', age: 10, nickname: '오리'},
       {no: 2, name: 'A', age: 10, nickname: '오리'},
@@ -50,9 +44,6 @@ export default {
     this.$refs.PGrid.setList(this.data);
   },
   methods: {
-    openDialog() {
-      this.$refs.dialog.open();
-    },
     createData() {
       for(let i=1; i<=10; ++i) {
         this.data.push(

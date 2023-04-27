@@ -7,10 +7,15 @@
         <tr>
           <th v-for="col in headers" :key="col" 
             :style="col.headerStyle">
+            <div class="header-left">
+              <svg-icon type="mdi" :path="col.filter || ''" @click="showFilter($event, col)"
+                @mouseover="filterIconOn(col)" @mouseout="filterIconOff(col)"/>
+            </div>
             {{ col.title }}
-            <svg-icon type="mdi" style="position: fixed;"
-              :path="col.sort || ''" @click="sort(col)"
-            />
+            <div class="header-right">
+              <svg-icon type="mdi" :path="col.sort || ''" @click="doSortFilter(col)"
+                @mouseover="sortIconOn(col)"  @mouseout="sortIconOff(col)"/>
+            </div>
           </th>
         </tr>
       </thead>
@@ -46,6 +51,8 @@
       </tbody>
     </table>
   </div>
+  <PFilterDialog ref="filterDialog" :col="headers[filterIndex]" 
+    @filter="doSortFilter"/>
 </template>
 
 <script setup>
@@ -82,26 +89,32 @@ const props = defineProps({
 
 // refs
 const mainDiv = ref(null);
+const filterDialog = ref(null);
 
 // local data
 const mainDivStyle = reactive({ height: props.height + 'px' }); // 전체 table을 감싸는 div의 높이 (props)
 
+let orglist = []; // 원본 List (sort, filter, 입력, 수정 아무것도 안된 original)
+let unFilterList = []; // filter 안된 List
 let sortList = []; // sort 되는 column들의 List
-let orglist = []; // 원본 List
+let filterList = []; // filter 되는 column들의 List
 let pGridUniqueIndex = 0;
-const sortedList = ref([]); // sort & filter 된 List
+const filterIndex = ref(0);
+const sortedFilteredList = ref([]); // sort & filter 된 List
 const displayedList = ref([]); // tbody에 display 되는 dataList
 
 const topBufferDiv = reactive({ height: 0 }); // tbody display 되는 data 위쪽 buffer div의 높이
 const bottomBufferDiv = reactive({ height: 0 }); // tbody display 되는 data 아래쪽쪽 buffer div의 높이
 
 const loadSizeHeight = computed(() => props.height * props.vPanelSize); // tbody에 display 되는 layer size 높이
-const totalScrollableHeight = computed(() => sortedList.value.length * props.maxRowHeight);
+const totalScrollableHeight = computed(() => sortedFilteredList.value.length * props.maxRowHeight);
 
 // methods
 function setList(list) {
   // 변수 초기화
+  unFilterList = list;
   sortList = [];
+  filterList = [];
   pGridUniqueIndex = 0;
 
   // list에 unique index 부여
@@ -111,7 +124,7 @@ function setList(list) {
 
   // orglist는 혹시나 restore 기능 넣을까봐 일단 넣어둠
   orglist = [...list];
-  sortedList.value = list;
+  sortedFilteredList.value = list;
 
   // 최초 display
   displayData();
@@ -128,43 +141,54 @@ function displayData() {
     Math.min(totalScrollableHeight.value, (scrollTop + loadSizeHeight.value)) / props.maxRowHeight
   ); // min(전체스크롤길이, (현재스크롤위치 + display되는 높이)) / 행의 높이
 
-  displayedList.value = sortedList.value.slice(startIndex, endIndex + 1);
+  displayedList.value = sortedFilteredList.value.slice(startIndex, endIndex + 1);
   topBufferDiv.height = startIndex * props.maxRowHeight + 'px';
-  bottomBufferDiv.height = Math.max(0, (sortedList.value.length - endIndex - 1) * props.maxRowHeight) + 'px';
+  bottomBufferDiv.height = Math.max(0, (sortedFilteredList.value.length - endIndex - 1) * props.maxRowHeight) + 'px';
 }
 
+// 정렬 원상태로 복구
+function restoreSort() {
+  sortedFilteredList.value.sort((a, b) => a.pGridUniqueIndex - b.pGridUniqueIndex);
+}
+
+// 정렬 버튼 눌렀을 때
 function sort(col) {
-  sortedList.value.sort((a, b) => a.pGridUniqueIndex - b.pGridUniqueIndex);
+  restoreSort(); // 일단 정렬 없는 원래 상태로 복구
+  
+  if(col) {
+    let index = sortList.findIndex((value) => value.key == col.key);
+    if(index > -1) sortList.splice(index, 1); // sortList 배열에서 현재 선택한 col 정보 삭제
 
-  let index = sortList.findIndex((value) => value.key == col.key);
-  if(index > -1) sortList.splice(index, 1);
+    if(!col.sort || col.sort == '') {
+      sortList.push({key: col.key, type: 'asc'}); // sortList 배열에 현재 선택한 col 정보 입력
+      sortedFilteredList.value.sort((a, b) => compare(a, b)); // 정렬 실행
 
-  if(!col.sort || col.sort == '') {
-    sortList.push({key: col.key, type: 'asc'});
-    sortedList.value.sort((a, b) => compare(a, b));
+      col.sort = mdi.mdiChevronUp; // header icon 변경
+    } else if (col.sort == mdi.mdiChevronUp){
+      sortList.push({key: col.key, type: 'desc'});
+      sortedFilteredList.value.sort((a, b) => compare(a, b));
 
-    col.sort = mdi.mdiChevronUp;
-  } else if (col.sort == mdi.mdiChevronUp){
-    sortList.push({key: col.key, type: 'desc'});
-    sortedList.value.sort((a, b) => compare(a, b));
+      col.sort = mdi.mdiChevronDown;
+    } else {
+      if(sortList.length > 0) {
+        sortedFilteredList.value.sort((a, b) => compare(a, b));
+      }
 
-    col.sort = mdi.mdiChevronDown;
+      col.sort = '';
+    }
   } else {
     if(sortList.length > 0) {
-      sortedList.value.sort((a, b) => compare(a, b));
-    } else {
-      sortedList.value.sort((a, b) => a.pGridUniqueIndex - b.pGridUniqueIndex);
+      sortedFilteredList.value.sort((a, b) => compare(a, b));
     }
-    col.sort = '';
   }
-
-  displayData();
 }
 
+// custom 비교 함수
 function compare(a, b) {
-  let rtn = 0;
-  for(let i = 0; i < sortList.length; i++) {
-    if(rtn == 0) {
+  let rtn = 0; // result 값 a가 b보다 클 경우 양수, 같을 경우 0, 작을 경우 음수라고 한다
+  for(let i = 0; i < sortList.length; i++) { // 뭐 양수, 음수는 반대로 적은 걸수도 있는데 중요한건 0이 같다는 거고
+    if(rtn == 0) { // 그러므로 sortList를 순차적으로 순회하면서 결과가 0 (앞선 순번 비교에서 동일한 경우) 인 경우
+      // 다음 차례의 비교를 수행하고 0이 아닐 경우 해당 비교로 rtn을 return한다
       if(sortList[i].type == 'asc') {
         let key = sortList[i].key;
         if(typeof a[key] == 'string') rtn = a[key].localeCompare(b[key]);
@@ -179,11 +203,70 @@ function compare(a, b) {
   }
   return rtn;
 }
+
+// filter Dialog 함수
+function showFilter(event, col) {
+  filterIndex.value = props.headers.findIndex(item => item.key == col.key);
+  filterDialog.value.open(event);
+}
+
+// filter 원상태로 복구
+function restoreFilter() {
+  sortedFilteredList.value = unFilterList;
+}
+
+// filter 함수
+function filter() {
+  restoreFilter(); // 일단 필터 없는 원래 상태로 복구
+
+  filterList = []; // 빠른 탐색을 위해 header 배열에서 filterList 배열 미리 생성
+  props.headers.forEach(col => {
+    if(col.filterText)
+      filterList.push({key: col.key, filterText: col.filterText});
+  });
+
+  // 필터 실행
+  if(filterList.length > 0) {
+    sortedFilteredList.value = sortedFilteredList.value.filter(item => {
+      let rtn = true;
+      filterList.forEach(value => {
+        if(!String(item[value.key]).includes(value.filterText)) rtn = false;
+      });
+      return rtn;
+    });
+  } else { // 필터 실행되지 않은 경우에는
+    unFilterList = [...sortedFilteredList.value]; // unFilterList에 보존
+  }
+}
+
+// sort & filter 함수
+function doSortFilter(col) {
+  // 각각 서로 호출하게 하면 결국 순환 참조 오류가 생겨서 하나로 묶어야 함
+  filter(); // 필터 함수 호출
+  sort(col); // 정렬 함수 호출
+  displayData(); // display 함수 호출
+}
+
+// icon hover event
+function filterIconOn(col) {
+  if(!col.filter) col.filter = mdi.mdiMagnify;
+}
+function filterIconOff(col) {
+  let index = filterList.findIndex(item => item.key == col.key);
+  if(index == -1) col.filter = '';
+}
+function sortIconOn(col) {
+  if(!col.sort) col.sort = mdi.mdiChevronUp;
+}
+function sortIconOff(col) {
+  let index = sortList.findIndex(item => item.key == col.key);
+  if(index == -1) col.sort = '';
+}
 </script>
 
 <style scoped>
 table { 
-  border-collapse: collapse; 
+  border-collapse: collapse;
   width: 100%; 
 }
 
@@ -216,5 +299,15 @@ table {
   position: sticky;
   bottom: 0;
   z-index: 1;
+}
+
+.header-left {
+  float: left;
+  height: 24px;
+}
+
+.header-right {
+  float: right; 
+  height: 24px;
 }
 </style>

@@ -12,22 +12,16 @@
       {{ item[column] }}
     </template>
   </PGrid>
-  <svg-icon type="mdi" :path="mdi.mdiMagnify" @click="openDialog" />
-  <PFilterDialog ref="dialog"></PFilterDialog>
 </template>
 
 <script>
-import * as mdi from '@mdi/js';
 import PGrid from '@/components/PGrid/PGrid.vue';
-import PFilterDialog from '@/components/PGrid/PFilterDialog.vue';
 
 export default {
   components: {
     PGrid,
-    PFilterDialog,
   },
   data: () => ({
-    mdi,
     data: [],
     columns: [
       { title: 'NO', key: 'no', 
@@ -47,9 +41,6 @@ export default {
     this.$refs.PGrid.setList(this.data);
   },
   methods: {
-    openDialog() {
-      this.$refs.dialog.open();
-    },
     createData() {
       for(let i=1; i<=5000; ++i) {
         this.data.push(
@@ -65,13 +56,3 @@ export default {
   }
 }
 </script>
-
-<style>
-tbody tr:nth-child(odd) td {
-  background-color: black;
-}
-
-tbody tr:nth-child(even) td {
-  background-color: grey;
-}
-</style>
