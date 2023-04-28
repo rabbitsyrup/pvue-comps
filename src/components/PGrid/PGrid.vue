@@ -98,7 +98,6 @@ let orglist = []; // 원본 List (sort, filter, 입력, 수정 아무것도 안�
 let unFilterList = []; // filter 안된 List
 let sortList = []; // sort 되는 column들의 List
 let pGridUniqueIndex = 0;
-const filterIndex = ref(0);
 const filterList = ref([]); // filter 되는 column들의 List
 const sortedFilteredList = ref([]); // sort & filter 된 List
 const displayedList = ref([]); // tbody에 display 되는 dataList
@@ -110,12 +109,23 @@ const loadSizeHeight = computed(() => props.height * props.vPanelSize); // tbody
 const totalScrollableHeight = computed(() => sortedFilteredList.value.length * props.maxRowHeight);
 
 // methods
-function setList(list) {
+function setList(list) { 
+  // grid init 역할을 하고 있는데 혹시 필요시 method 분리 필요
   // 변수 초기화
   unFilterList = list;
   sortList = [];
-  //filterList.value = []; // 초기화 다시 작성
   pGridUniqueIndex = 0;
+
+  // refs 초기화
+  filterList.value = [];
+
+  // headers 초기화
+  props.headers.forEach(col => {
+    if(col.filter) col.filter = false;
+    if(col.filterText) col.filterText = '';
+    if(col.sort) col.sort = '';
+  });
+
 
   // list에 unique index 부여
   list.forEach(item => {
@@ -146,15 +156,11 @@ function displayData() {
   bottomBufferDiv.height = Math.max(0, (sortedFilteredList.value.length - endIndex - 1) * props.maxRowHeight) + 'px';
 }
 
-// 정렬 원상태로 복구
-function restoreSort() {
-  sortedFilteredList.value.sort((a, b) => a.pGridUniqueIndex - b.pGridUniqueIndex);
-}
-
 // 정렬 버튼 눌렀을 때
 function sort(col) {
-  restoreSort(); // 일단 정렬 없는 원래 상태로 복구
-  
+  // 일단 정렬 없는 원래 상태로 복구
+  sortedFilteredList.value.sort((a, b) => a.pGridUniqueIndex - b.pGridUniqueIndex);
+
   if(col) {
     let index = sortList.findIndex((value) => value.key == col.key);
     if(index > -1) sortList.splice(index, 1); // sortList 배열에서 현재 선택한 col 정보 삭제
@@ -206,18 +212,13 @@ function compare(a, b) {
 
 // filter Dialog 함수
 function showFilter(event, col) {
-  filterIndex.value = props.headers.findIndex(item => item.key == col.key);
   filterDialog.value.open(event, col);
-}
-
-// filter 원상태로 복구
-function restoreFilter() {
-  sortedFilteredList.value = unFilterList;
 }
 
 // filter 함수
 function filter() {
-  restoreFilter(); // 일단 필터 없는 원래 상태로 복구
+  // 일단 필터 없는 원래 상태로 복구
+  sortedFilteredList.value = unFilterList;
 
   // 필요 없는 filter 목록 정리
   filterList.value = filterList.value.filter(filterItem => {

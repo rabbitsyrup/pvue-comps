@@ -4,7 +4,7 @@
     :headers="columns"
     :height="height"
   >
-  </PGrid>
+  </PGrid><span @click="setGrid">123</span>
 </template>
 
 <script>
@@ -44,6 +44,9 @@ export default {
     this.$refs.PGrid.setList(this.data);
   },
   methods: {
+    setGrid() {
+      this.$refs.PGrid.setList(this.data);
+    },
     createData() {
       for(let i=1; i<=10; ++i) {
         this.data.push(
