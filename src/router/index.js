@@ -20,18 +20,17 @@ const router = createRouter({
     {
       path: '/grid',
       name: 'grid',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () => import('../views/GridView.vue')
     },
     {
       path: '/grid2',
       name: 'grid2',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () => import('../views/GridView2.vue')
+    },
+    {
+      path: '/editor',
+      name: 'editor',
+      component: () => import('../views/EditorView.vue')
     }
   ]
 })

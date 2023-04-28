@@ -15,6 +15,7 @@ import HelloWorld from './components/HelloWorld.vue'
         <RouterLink to="/about">About</RouterLink>
         <RouterLink to="/grid">grid</RouterLink>
         <RouterLink to="/grid2">grid2</RouterLink>
+        <RouterLink to="/editor">editor</RouterLink>
       </nav>
     </div>
   </header>
