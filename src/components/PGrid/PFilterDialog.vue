@@ -1,16 +1,35 @@
 <template>
   <PDialog 
     :title="'Filter'"
-    :width="200"
+    :width="350"
     :top="top"
     :left="left"
-    v-model:show="show">
-    <input type="text" @keydown.enter="() => show = false" v-model="col.filterText"/>
+    v-model:show="show"
+    @close="close">
+      <table>
+        <colgroup>
+          <col width="40%" />
+          <col width="2%" />
+        </colgroup>
+        <tr v-for="filterItem in filterList" :key="filterItem">
+          <td>
+            {{ filterItem.title }}
+          </td>
+          <td>
+            <input type="text" @keydown.enter="close" v-model="filterItem.filterText"/>
+          </td>
+          <td>
+            <div style="float: right; height: 24px;">
+              <svg-icon type="mdi" :path="mdi.mdiClose" @click="removeFilter(filterItem)" />
+            </div>
+          </td>
+        </tr>
+      </table>
   </PDialog>
 </template>
 
 <script setup>
-import { ref, toRef, watch } from 'vue';
+import { toRef, ref, reactive, watch } from 'vue';
 import * as mdi from '@mdi/js';
 import PDialog from '@/components/PDialog/PDialog.vue';
 
@@ -23,32 +42,44 @@ const emit = defineEmits([
 ]);
 
 const props = defineProps({
-  col: Object,
+  filterList: Array,
 });
 
 const show = ref(false);
 const top = ref(0);
 const left = ref(0);
-const col = toRef(props, 'col');
-
-watch(col, (val) => {
-  if(val.filterText) {
-    val.filter = mdi.mdiMagnify;
-  } else {
-    val.filter = '';
-  }
-}, { deep: true });
+const col = reactive({});
+const filterList = toRef(props, 'filterList');
 
 watch(show, (val) => {
   if(!val) {
-    emit('filter');
+    emit('filter', filterList);
   }
 })
 
-function open(event) {
+function open(event, item) {
+  col.value = item;
   top.value = event.clientY;
   left.value = event.clientX;
+  let index = filterList.value.findIndex((value) => value == item);
+  if(index > -1) filterList.value.splice(index, 1); // filterList 배열에서 현재 선택한 filter 있을 경우 삭제
+  filterList.value.unshift(item); // filterList 배열에 현재 선택한 col 맨 앞에 insert  
   show.value = true;
+}
+
+function close() {
+  emit('filter');
+  show.value = false;
+}
+
+function removeFilter(filterItem) {
+  filterItem.filterText = '';
+  filterItem.filter = false;
+  let index = filterList.value.findIndex((value) => value == filterItem);
+  if(index > -1) filterList.value.splice(index, 1); // filterList 배열에서 현재 선택한 filter 삭제
+  if(filterList.value.length == 0) {
+    close();
+  }
 }
 </script>
 

@@ -64,7 +64,6 @@ export default {
 tbody tr:nth-child(odd) td {
   background-color: black;
 }
-
 tbody tr:nth-child(even) td {
   background-color: grey;
 }

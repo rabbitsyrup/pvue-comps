@@ -8,13 +8,13 @@
           <th v-for="col in headers" :key="col" 
             :style="col.headerStyle">
             <div class="header-left">
-              <svg-icon type="mdi" :path="col.filter || ''" @click="showFilter($event, col)"
-                @mouseover="filterIconOn(col)" @mouseout="filterIconOff(col)"/>
+              <svg-icon type="mdi" :path="mdi.mdiMagnify" @click="showFilter($event, col)"
+                :class="col.filter ? 'icon-on' : 'icon-off'" />
             </div>
             {{ col.title }}
             <div class="header-right">
-              <svg-icon type="mdi" :path="col.sort || ''" @click="doSortFilter(col)"
-                @mouseover="sortIconOn(col)"  @mouseout="sortIconOff(col)"/>
+              <svg-icon type="mdi" :path="col.sort || mdi.mdiChevronUp" 
+                :class="col.sort ? 'icon-on' : 'icon-off'" @click="doSortFilter(col)"/>
             </div>
           </th>
         </tr>
@@ -51,7 +51,7 @@
       </tbody>
     </table>
   </div>
-  <PFilterDialog ref="filterDialog" :col="headers[filterIndex]" 
+  <PFilterDialog ref="filterDialog" :filterList="filterList"
     @filter="doSortFilter"/>
 </template>
 
@@ -97,9 +97,9 @@ const mainDivStyle = reactive({ height: props.height + 'px' }); // 전체 table�
 let orglist = []; // 원본 List (sort, filter, 입력, 수정 아무것도 안된 original)
 let unFilterList = []; // filter 안된 List
 let sortList = []; // sort 되는 column들의 List
-let filterList = []; // filter 되는 column들의 List
 let pGridUniqueIndex = 0;
 const filterIndex = ref(0);
+const filterList = ref([]); // filter 되는 column들의 List
 const sortedFilteredList = ref([]); // sort & filter 된 List
 const displayedList = ref([]); // tbody에 display 되는 dataList
 
@@ -114,7 +114,7 @@ function setList(list) {
   // 변수 초기화
   unFilterList = list;
   sortList = [];
-  filterList = [];
+  //filterList.value = []; // 초기화 다시 작성
   pGridUniqueIndex = 0;
 
   // list에 unique index 부여
@@ -207,7 +207,7 @@ function compare(a, b) {
 // filter Dialog 함수
 function showFilter(event, col) {
   filterIndex.value = props.headers.findIndex(item => item.key == col.key);
-  filterDialog.value.open(event);
+  filterDialog.value.open(event, col);
 }
 
 // filter 원상태로 복구
@@ -219,17 +219,22 @@ function restoreFilter() {
 function filter() {
   restoreFilter(); // 일단 필터 없는 원래 상태로 복구
 
-  filterList = []; // 빠른 탐색을 위해 header 배열에서 filterList 배열 미리 생성
-  props.headers.forEach(col => {
-    if(col.filterText)
-      filterList.push({key: col.key, filterText: col.filterText});
+  // 필요 없는 filter 목록 정리
+  filterList.value = filterList.value.filter(filterItem => {
+    if(filterItem.filterText) {
+      filterItem.filter = true;
+      return true;
+    } else {
+      filterItem.filter = false;
+      return false;
+    }
   });
 
   // 필터 실행
-  if(filterList.length > 0) {
+  if(filterList.value.length > 0) {
     sortedFilteredList.value = sortedFilteredList.value.filter(item => {
       let rtn = true;
-      filterList.forEach(value => {
+      filterList.value.forEach(value => {
         if(!String(item[value.key]).includes(value.filterText)) rtn = false;
       });
       return rtn;
@@ -246,22 +251,6 @@ function doSortFilter(col) {
   sort(col); // 정렬 함수 호출
   displayData(); // display 함수 호출
 }
-
-// icon hover event
-function filterIconOn(col) {
-  if(!col.filter) col.filter = mdi.mdiMagnify;
-}
-function filterIconOff(col) {
-  let index = filterList.findIndex(item => item.key == col.key);
-  if(index == -1) col.filter = '';
-}
-function sortIconOn(col) {
-  if(!col.sort) col.sort = mdi.mdiChevronUp;
-}
-function sortIconOff(col) {
-  let index = sortList.findIndex(item => item.key == col.key);
-  if(index == -1) col.sort = '';
-}
 </script>
 
 <style scoped>
@@ -273,7 +262,6 @@ table {
 .mainDiv {
   overflow: auto;
 }
-
 .mainDiv thead tr th {
   background-color: #42b983;
   opacity: 100%;
@@ -281,21 +269,19 @@ table {
   top: 0;
   z-index: 1;
 }
-
 .mainDiv thead tr:nth-child(2) th {
   position: sticky;
   top: 26px;
   z-index: 1;
 }
-
 .mainDiv thead tr:nth-child(3) th {
   position: sticky;
   top: 52px;
   z-index: 1;
 }
-
 .mainDiv tfoot tr {
   background-color: #42b983;
+  opacity: 100%;
   position: sticky;
   bottom: 0;
   z-index: 1;
@@ -305,9 +291,20 @@ table {
   float: left;
   height: 24px;
 }
-
 .header-right {
   float: right; 
   height: 24px;
+}
+
+.icon-off {
+  opacity: 50%;
+}
+.icon-off:hover {
+  opacity: 100%;
+}
+
+.icon-on {
+  opacity: 100%;
+  color: pink;
 }
 </style>

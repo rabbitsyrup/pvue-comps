@@ -29,7 +29,8 @@ defineExpose({
 });
 
 const emit = defineEmits([
-  'update:show'
+  'update:show',
+  'close'
 ]);
 
 const props = defineProps({
@@ -61,7 +62,7 @@ const containerStyle = computed(() => {
 });
 
 function close() {
-  show.value = false;
+  emit('close');
 }
 </script>
 
@@ -77,7 +78,6 @@ function close() {
   display: flex;
   transition: opacity 0.3s ease;
 }
-
 .modal-container {
   position: absolute;
   margin: auto;
@@ -86,26 +86,21 @@ function close() {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.33);
   transition: all 0.3s ease;
 }
-
 .modal-header {
   border-radius: 15px 15px 0px 0px;
   padding: 5px 10px 5px 10px;
   background-color: #42b983;
 }
-
 .modal-body {
   margin: 10px;
 }
-
 /* modal Transition */
 .modal-enter-from {
   opacity: 0;
 }
-
 .modal-leave-to {
   opacity: 0;
 }
-
 .modal-enter-from .modal-container,
 .modal-leave-to .modal-container {
   -webkit-transform: scale(1.1);
