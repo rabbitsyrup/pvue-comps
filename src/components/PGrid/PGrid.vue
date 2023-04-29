@@ -1,7 +1,13 @@
 <template>
   <div class="toolbar" :style="toolbarStyle">
-    <div>
-      <svg-icon type="mdi" :path="mdi.mdiPlusBoxOutline" @click="addRow(null)"/>
+    <div class="left-box">
+      <svg-icon type="mdi" class="icon-off" :path="mdi.mdiFilterCogOutline"/>
+    </div>
+    <div class="right-box">
+      <svg-icon type="mdi" class="icon-off" :path="mdi.mdiHistory"
+        @click="restoreData"/>
+      <svg-icon type="mdi" :path="mdi.mdiMagnify"/>
+      <input type="text" v-model="searchText" @keydown.enter="doSortFilter"/>
     </div>
   </div>
   <div class="mainDiv" 
@@ -10,16 +16,17 @@
     <table>
       <thead>
         <tr>
-          <th class="header-front-th">
-            <div>
-              <svg-icon type="mdi" :path="mdi.mdiFilterCogOutline"/>
+          <th>
+            <div class="icon-box">
+              <svg-icon type="mdi" :path="mdi.mdiPlusBoxOutline" 
+                class="icon-off" @click="addRow(null)"/>
             </div>
           </th>
           <th v-for="col in headers" :key="col" 
-            :style="col.headerStyle">
+            :style="{width: col.width + 'px'}">
             <div class="header-th">
               <svg-icon type="mdi" 
-                :path="col.filter ? mdi.mdiFilterPlus : mdi.mdiFilterOutline"
+                :path="col.filter ? mdi.mdiFilter : mdi.mdiFilterOutline"
                 :class="col.filter ? 'icon-on' : 'icon-off'" 
                 @click="showFilter($event, col)"/>
               {{ col.title }}
@@ -44,17 +51,32 @@
 
       <tbody>
         <div :style="topBufferDiv"></div>
-        <tr v-for="row in displayedList" :key="row" @click="selectRow(row)">
-          <td :class="'header-front-td ' + getClass('tbody td', row)">
-            <div>
-              <svg-icon type="mdi" :path="mdi.mdiMinusBoxOutline"/>
+        <tr v-for="(row, index) in displayedList" :key="row" @click="selectRow(row)">
+          <td :class="getClass('tbody td', row)">
+            <div class="icon-box">
+              <svg-icon type="mdi" :path="row.crud == 'D' ? mdi.mdiRestore : mdi.mdiMinusBoxOutline" 
+                class="icon-off" @click="deleteRow(row)"/>
             </div>
           </td>
           <td v-for="col in headers" :key="col" 
-            :style="col.bodyStyle" :class="getClass('tbody td', row)">
-            <slot name="body" :item="row" :column="col.key">
-              {{ row[col.key] }}
-            </slot>
+            :style="{textAlign: col.align}" :class="getClass('tbody td', row)"
+            @click="openEditor(index, col)">
+            <Transition>
+              <slot v-if="col.customSlot" name="body" :item="row" :column="col.key"><!-- custom slot --></slot>
+              
+              <span v-else-if="col.editType == 'text' && (editor.index != index || editor.key != col.key)">
+                {{ row[col.key] }}
+              </span>
+
+              <input v-else-if="col.editType == 'text' && (editor.index == index && editor.key == col.key)"
+                type="text" autofocus
+                @update:focused="eventTest" @keydown.enter="eventTest"
+                v-model="row[col.key]" />
+
+              <span v-else><!-- default -->
+                {{ row[col.key] }}
+              </span>
+            </Transition>
           </td>
         </tr>
         <div :style="bottomBufferDiv"></div>
@@ -66,17 +88,21 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
 import * as mdi from '@mdi/js';
 import PFilterDialog from '@/components/PGrid/PFilterDialog.vue';
 
 defineExpose({
   setList,
+  getList,
+  getUnFilterList,
   addRow,
+  deleteRow,
+  restoreData,
 });
 
 const emit = defineEmits([
-
+  'selectRow'
 ]);
 
 const props = defineProps({
@@ -84,6 +110,8 @@ const props = defineProps({
   headers: Array,
   height: Number,
   width: Number,
+  watcherList: Array,
+  readonly: Boolean,
   maxRowHeight: {
     type: Number,
     default: 26,
@@ -109,18 +137,23 @@ const toolbarStyle = reactive({
 });
 const mainDivStyle = reactive({ 
   height: props.height + 'px',  // 전체 table을 감싸는 div의 높이
-  width: props.width + 'px'
+  width: props.width + 'px',
+});
+const editor = ref({
+  index: -1,
+  key: -1,
 });
 
 let orglist = []; // 원본 List (sort, filter, 입력, 수정 아무것도 안된 original)
 let unFilterList = []; // filter 안된 List
 let sortList = []; // sort 되는 column들의 List
 let pGridUniqueIndex = 0;
+const searchText = ref("");
 const filterList = ref([]); // filter 되는 column들의 List
 const sortedFilteredList = ref([]); // sort & filter 된 List
 const displayedList = ref([]); // tbody에 display 되는 dataList
 
-const selectedRow = reactive({}); // 현재 선택된 row
+const selectedRow = ref({}); // 현재 선택된 row
 
 const topBufferDiv = reactive({ height: 0 }); // tbody display 되는 data 위쪽 buffer div의 높이
 const bottomBufferDiv = reactive({ height: 0 }); // tbody display 되는 data 아래쪽쪽 buffer div의 높이
@@ -128,17 +161,33 @@ const bottomBufferDiv = reactive({ height: 0 }); // tbody display 되는 data �
 const loadSizeHeight = computed(() => props.height * props.vPanelSize); // tbody에 display 되는 layer size 높이
 const totalScrollableHeight = computed(() => sortedFilteredList.value.length * props.maxRowHeight);
 
+function eventTest(t) {console.log(t)}
+
+function openEditor(index, col) {
+  if(props.readonly) return;
+  editor.value.index = index;
+  editor.value.key = col.key;
+}
+
+function closeEditor() {console.log(editor)
+  editor.value.index = -1;
+  editor.value.key = -1;
+}
+
 // methods
 function setList(list) { 
+  toggleWatcher(false);
+
   // grid init 역할을 하고 있는데 혹시 필요시 method 분리 필요
   // 변수 초기화
-  unFilterList = list;
   sortList = [];
   pGridUniqueIndex = 0;
 
   // refs 초기화
+  searchText.value = "";
   filterList.value = [];
   selectedRow.value = {};
+  closeEditor();
 
   // headers 초기화
   props.headers.forEach(col => {
@@ -147,18 +196,29 @@ function setList(list) {
     if(col.sort) col.sort = '';
   });
 
-
   // list에 unique index 부여
   list.forEach(item => {
     item.pGridUniqueIndex = pGridUniqueIndex++;
   });
 
   // orglist는 혹시나 restore 기능 넣을까봐 일단 넣어둠
-  orglist = [...list];
-  sortedFilteredList.value = list;
+  //orglist = [...list]; // shallow copy
+  orglist = JSON.parse(JSON.stringify(list)); // deep copy
+  sortedFilteredList.value = JSON.parse(JSON.stringify(list));
+  unFilterList = [...sortedFilteredList.value];
 
   // 최초 display
   displayData();
+  
+  toggleWatcher(true);
+}
+
+function getList() {
+  return sortedFilteredList.value;
+}
+
+function getUnFilterList() {
+  return unFilterList;
 }
 
 function displayData() {
@@ -178,22 +238,72 @@ function displayData() {
   bottomBufferDiv.height = Math.max(0, (sortedFilteredList.value.length - endIndex - 1) * props.maxRowHeight) + 'px';
 }
 
-// 정렬 버튼 눌렀을 때
-function sort(col) {
+// filter Dialog 함수
+function showFilter(event, col) {
+  filterDialog.value.open(event, col);
+}
+
+// sort & filter 함수
+function doSortFilter(col) {
+  // 각각 서로 호출하게 하면 결국 순환 참조 오류가 생겨서 하나로 묶어야 함 (filter function + sort function)
+ 
   // 일단 정렬 없는 원래 상태로 복구
   sortedFilteredList.value.sort((a, b) => a.pGridUniqueIndex - b.pGridUniqueIndex);
 
+  // 필터 없는 원래 상태로 복구
+  sortedFilteredList.value = [...unFilterList]; 
+
+  // FILTER START
+  // 필요 없는 filter 목록 정리
+  filterList.value = filterList.value.filter(filterItem => {
+    if(filterItem.filterText) {
+      filterItem.filter = true;
+      return true;
+    } else {
+      filterItem.filter = false;
+      return false;
+    }
+  });
+
+  // 필터 실행
+  // grid 상단 filterText
+  if(searchText.value.length > 0) {
+    sortedFilteredList.value = sortedFilteredList.value.filter(item => {
+      let rtn = false;
+      props.headers.forEach(value => {
+        if(String(item[value.key]).includes(searchText.value)) rtn = true;
+      })
+      return rtn;
+    });
+  }
+  // grid Header filterList
+  if(filterList.value.length > 0) {
+    sortedFilteredList.value = sortedFilteredList.value.filter(item => {
+      let rtn = true;
+      filterList.value.forEach(value => {
+        if(!String(item[value.key]).includes(value.filterText)) rtn = false;
+      });
+      return rtn;
+    });
+  }
+  // 필터 실행되지 않은 경우에는
+  if(!(searchText.value.length > 0 || filterList.value.length > 0)) {
+    unFilterList = [...sortedFilteredList.value]; // unFilterList에 보존
+  }
+  // FILTER END
+
+  // SORT START
   if(col) {
     let index = sortList.findIndex((value) => value.key == col.key);
     if(index > -1) sortList.splice(index, 1); // sortList 배열에서 현재 선택한 col 정보 삭제
 
     if(!col.sort || col.sort == '') {
-      sortList.push({key: col.key, type: 'asc'}); // sortList 배열에 현재 선택한 col 정보 입력
+      sortList.push({key: col.key, sortType: 'asc', dataType: col.dataType}); // sortList 배열에 현재 선택한 col 정보 입력
       sortedFilteredList.value.sort((a, b) => compare(a, b)); // 정렬 실행
 
       col.sort = mdi.mdiChevronUp; // header icon 변경
     } else if (col.sort == mdi.mdiChevronUp){
-      sortList.push({key: col.key, type: 'desc'});
+      sortList.push({key: col.key, sortType: 'desc', dataType: col.dataType});
       sortedFilteredList.value.sort((a, b) => compare(a, b));
 
       col.sort = mdi.mdiChevronDown;
@@ -209,6 +319,9 @@ function sort(col) {
       sortedFilteredList.value.sort((a, b) => compare(a, b));
     }
   }
+  // SORT END
+
+  displayData(); // display 함수 호출
 }
 
 // custom 비교 함수
@@ -217,62 +330,29 @@ function compare(a, b) {
   for(let i = 0; i < sortList.length; i++) { // 뭐 양수, 음수는 반대로 적은 걸수도 있는데 중요한건 0이 같다는 거고
     if(rtn == 0) { // 그러므로 sortList를 순차적으로 순회하면서 결과가 0 (앞선 순번 비교에서 동일한 경우) 인 경우
       // 다음 차례의 비교를 수행하고 0이 아닐 경우 해당 비교로 rtn을 return한다
-      if(sortList[i].type == 'asc') {
+      if(sortList[i].sortType == 'asc') {
         let key = sortList[i].key;
-        if(typeof a[key] == 'string') rtn = a[key].localeCompare(b[key]);
-        if(typeof a[key] == 'number') rtn = a[key] - b[key];
+        if(sortList[i].dataType == 'number') rtn = a[key] - b[key];
+        else if(sortList[i].dataType == 'string') rtn = a[key].localeCompare(b[key]);
+        else rtn = String(a[key]).localeCompare(String(b[key]));
       }
-      if(sortList[i].type == 'desc') {
+      if(sortList[i].sortType == 'desc') {
         let key = sortList[i].key;
-        if(typeof a[key] == 'string') rtn = b[key].localeCompare(a[key]);
-        if(typeof a[key] == 'number') rtn = b[key] - a[key];
+        if(sortList[i].dataType == 'number') rtn = b[key] - a[key];
+        else if(sortList[i].dataType == 'string') rtn = b[key].localeCompare(a[key]);
+        else rtn = String(b[key]).localeCompare(String(a[key]));
       }
     }
   }
   return rtn;
 }
 
-// filter Dialog 함수
-function showFilter(event, col) {
-  filterDialog.value.open(event, col);
-}
-
-// filter 함수
-function filter() {
-  // 일단 필터 없는 원래 상태로 복구
-  sortedFilteredList.value = unFilterList;
-
-  // 필요 없는 filter 목록 정리
-  filterList.value = filterList.value.filter(filterItem => {
-    if(filterItem.filterText) {
-      filterItem.filter = true;
-      return true;
-    } else {
-      filterItem.filter = false;
-      return false;
-    }
-  });
-
-  // 필터 실행
-  if(filterList.value.length > 0) {
-    sortedFilteredList.value = sortedFilteredList.value.filter(item => {
-      let rtn = true;
-      filterList.value.forEach(value => {
-        if(!String(item[value.key]).includes(value.filterText)) rtn = false;
-      });
-      return rtn;
-    });
-  } else { // 필터 실행되지 않은 경우에는
-    unFilterList = [...sortedFilteredList.value]; // unFilterList에 보존
-  }
-}
-
-// sort & filter 함수
-function doSortFilter(col) {
-  // 각각 서로 호출하게 하면 결국 순환 참조 오류가 생겨서 하나로 묶어야 함
-  filter(); // 필터 함수 호출
-  sort(col); // 정렬 함수 호출
-  displayData(); // display 함수 호출
+// edit 전 상태로 data 복구
+function restoreData() {
+  //sortedFilteredList.value = [...orglist];
+  sortedFilteredList.value = JSON.parse(JSON.stringify(orglist));
+  unFilterList = [...sortedFilteredList.value];
+  doSortFilter();
 }
 
 // add row
@@ -289,8 +369,8 @@ function addRow(param) {
     };
   }
 
-  let index = sortedFilteredList.value.findIndex((value) => value == selectedRow.value);
-  if(index > -1) sortedFilteredList.value.splice(index, 0, newRow); // 선택한 행이 있으면 선택한 행 앞에 추가
+  let selectedIndex = sortedFilteredList.value.findIndex((value) => value == selectedRow.value);
+  if(selectedIndex > -1) sortedFilteredList.value.splice(selectedIndex, 0, newRow); // 선택한 행이 있으면 선택한 행 앞에 추가
   else { // 선택한 행이 없을 땐 맨 앞에 추가하고 맨 위로 이동
     sortedFilteredList.value.unshift(newRow); // 배열에 추가
     mainDiv.value.scrollTop = 0; // 스크롤 이동
@@ -299,16 +379,85 @@ function addRow(param) {
   displayData(); // display 함수 호출
 }
 
+// delete row
+function deleteRow(row) {
+  if(row) {
+    selectRow(row);
+  }
+
+  let selectedIndex = sortedFilteredList.value.findIndex((value) => value == selectedRow.value);
+  if(selectedIndex == -1) {
+    alert("먼저 삭제할 행을 선택하시기 바랍니다.");
+    return;
+  }
+  
+  toggleWatcher(false);
+  if(selectedRow.value.crud && selectedRow.value.crud == "C") {
+    sortedFilteredList.value.splice(selectedIndex, 1);
+    selectedRow.value = {};
+  } else if (selectedRow.value.crud == "D") { 
+    selectedRow.value.crud = "U";
+  } else {
+    selectedRow.value.crud = "D";
+  }
+  toggleWatcher(true);
+
+  displayData(); // display 함수 호출
+}
+
 // select row
 function selectRow(item) {
+  toggleWatcher(false);
   selectedRow.value = item;
+  emit('selectRow', item);
+  toggleWatcher(true);
 }
 
 // 조건부 class
 function getClass(location, param) {
+  let rtn = '';
   if(location == 'tbody td') {
-    if(selectedRow.value == param) {
-      return 'selected';
+    if(param.crud && param.crud == 'D') rtn += ' deleted';
+    if(selectedRow.value == param) rtn += ' selected';
+  }
+  return rtn;
+}
+
+// watch
+const watcher = {};
+function toggleWatcher(bool) {
+  if(bool) {
+    watcher.default = watch(sortedFilteredList, () => {
+      let selectedIndex = sortedFilteredList.value.findIndex((value) => value == selectedRow.value);
+      if(selectedIndex == -1) return; //처음 selected 없을때 error
+      if(selectedRow.value.crud && selectedRow.value.crud == 'C') return; //생성된 자료는 U로 업데이트 하면 안됨
+      selectedRow.value.crud = 'U';
+    }, { deep: true });
+
+    if(props.watcherList) {
+      props.watcherList.forEach((value) => {
+        watcher[value] = watch(() => {
+          if(selectedRow.value.pGridUniqueIndex) return sortedFilteredList.value[selectedRow.value.pGridUniqueIndex][value]; 
+        }, (val, oldVal) => {
+          if(oldVal) {
+            emit('onValueChange', {
+              val: val,
+              oldVal: oldVal,
+              selected: selectedRow.value,
+              column: value,
+            });
+          }
+        });
+      });
+    }
+  } else {
+    if(watcher.default) watcher.default();
+    watcher.default = null;
+    if(props.watcherList) {
+      props.watcherList.forEach((value) => {
+        if(watcher[value]) watcher[value]();
+        watcher[value] = null;
+      });
     }
   }
 }

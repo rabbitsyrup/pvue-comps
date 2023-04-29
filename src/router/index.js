@@ -23,9 +23,9 @@ const router = createRouter({
       component: () => import('../views/GridView.vue')
     },
     {
-      path: '/grid2',
-      name: 'grid2',
-      component: () => import('../views/GridView2.vue')
+      path: '/multiRowGrid',
+      name: 'multiRowGrid',
+      component: () => import('../views/MultiRowGridView.vue')
     },
     {
       path: '/editor',

@@ -2,11 +2,10 @@
   <PGrid ref="PGrid"
     :name="'PGrid'"
     :headers="columns"
-    :height="300"
+    :height="500"
     :width="600"
   >
   </PGrid>
-  <a href="javascript:;" @click="setGrid">Data Reset</a>
 </template>
 
 <script>
@@ -17,37 +16,35 @@ export default {
     PGrid,
   },
   data: () => ({
-    data: [
-      {no: 1, name: 'A', age: 10, nickname: '오리'},
-      {no: 2, name: 'A', age: 10, nickname: '오리'},
-      {no: 2, name: 'B', age: 15, nickname: '산'},
-      {no: 3, name: 'B', age: 15, nickname: '산'},
-      {no: 3, name: 'B', age: 15, nickname: '산'},
-      {no: 3, name: 'C', age: 15, nickname: '해수면'},
-      {no: 4, name: 'C', age: 15, nickname: '해수면'},
-      {no: 4, name: 'C', age: 20, nickname: '해수면'},
-      {no: 5, name: 'C', age: 22, nickname: '해수면'},
-    ],
+    data: [],
     columns: [
-      { title: 'NO', key: 'no', 
-        headerStyle: { width: '100px' }, 
-        bodyStyle: { textAlign: 'right' }} ,
-      { title: 'NAME', key: 'name', 
-        bodyStyle: { textAlign: 'right' }},
-      { title: 'AGE', key: 'age', 
-        bodyStyle: { textAlign: 'right' }},
-      { title: 'NICKNAME', key: 'nickname', 
-        headerStyle: { width: '200px' }, 
-        bodyStyle: { textAlign: 'right' }},
+      { title: 'NO', key: 'no', dataType: 'number', width: 100, 
+        align: 'right', } ,
+      { title: 'NAME', key: 'name', dataType: 'string', align: 'right', 
+        editType: 'text', },
+      { title: 'AGE', key: 'age', dataType: 'number', align: 'right', },
+      { title: 'NICKNAME', key: 'nickname', dataType: 'string', width: 200, 
+        align: 'right', },
     ],
+    namePool: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
   }),
   mounted() {
+    this.createData();
     this.$refs.PGrid.setList(this.data);
   },
   methods: {
-    setGrid() {
-      this.$refs.PGrid.setList(this.data);
-    },
+    createData() {
+      for(let i = 1; i <= 5000; ++i) {
+        this.data.push(
+          {
+            no: i,
+            name: this.namePool.charAt(Math.floor(Math.random() * 24)),
+            age: Math.floor((Math.random() * 30) + 20),
+            nickname: this.namePool.charAt(Math.floor(Math.random() * 24)) + this.namePool.charAt(Math.floor(Math.random() * 24))
+          }
+        ) 
+      }
+    }
   }
 }
 </script>

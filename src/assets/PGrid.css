@@ -3,8 +3,8 @@
   하드코딩 하면 기능적으로 문제가 될 가능성이 있음
 */
 :root {
-  --thead-row-height: 26px; 
-  /* thead 한 row의 높이 (border 두께까지 포함) 
-     header 고정하는 계산에 사용함
-  */
+  --toolbar-height: 30px; 
+  /* thead th의 높이 header 고정하는 계산에 사용함 */
+  --thead-tr-height: 30px; 
+  /* thead th의 높이 header 고정하는 계산에 사용함 */
 }

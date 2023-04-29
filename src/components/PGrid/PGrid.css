@@ -1,6 +1,26 @@
+ /* 
+  var 함수에 쓰이는 변수들은
+  @/assets/PGrid.css 파일에서 수정 필요
+ */
+
 .toolbar {
   background-color: royalblue;
-  height: 24px;
+  height: var(--toolbar-height);
+}
+.toolbar .left-box {
+  float: left;
+  height: var(--toolbar-height);
+  display: flex;
+  justify-content : left;
+  align-items: center;
+}
+.toolbar .right-box {
+  float: right;
+  height: var(--toolbar-height);
+  padding-right: 5px;
+  display: flex;
+  justify-content : right;
+  align-items: center;
 }
 
 .mainDiv {
@@ -11,6 +31,7 @@
   width: 100%; 
 }
 .mainDiv table thead tr th {
+  height: var(--thead-tr-height);
   background-color: #42b983;
   opacity: 100%;
   position: sticky;
@@ -19,16 +40,16 @@
   color: lightgoldenrodyellow;
 }
 .mainDiv table thead tr:nth-child(2) th {
-  top: var(--thead-row-height);
+  top: var(--thead-tr-height);
 }
 .mainDiv table thead tr:nth-child(3) th {
-  top: calc(var(--thead-row-height) * 2);
+  top: calc(var(--thead-tr-height) * 2);
 }
 .mainDiv table thead tr:nth-child(4) th {
-  top: calc(var(--thead-row-height) * 3);
+  top: calc(var(--thead-tr-height) * 3);
 }
 .mainDiv table thead tr:nth-child(5) th {
-  top: calc(var(--thead-row-height) * 4);
+  top: calc(var(--thead-tr-height) * 4);
 }
 .mainDiv table tfoot tr td {
   background-color: #42b983;
@@ -49,19 +70,14 @@
 .mainDiv table tbody tr td.selected {
   background-color: rgb(155, 207, 255);
 }
-
-.header-front-th, .header-front-td {
-  width: 24px;
-}
-.header-front-th div, .header-front-td div {
-  height: 24px;
+.mainDiv table tbody tr td.deleted {
+  text-decoration: line-through;
 }
 
 .header-th {
   display: flex;
-  justify-content : right;
+  justify-content : center;
   align-items: center;
-  height: 24px;
 }
 
 .icon-on {
@@ -75,9 +91,7 @@
   opacity: 100%;
 }
 
-.selected-row {
-  text-decoration: line-through;
-}
-.deleted-row {
-  text-decoration: line-through;
+.icon-box {
+  width: 24px;
+  height: 24px;
 }
