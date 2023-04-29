@@ -1,20 +1,32 @@
 <template>
+  <div class="toolbar" :style="toolbarStyle">
+    <div>
+      <svg-icon type="mdi" :path="mdi.mdiPlusBoxOutline" @click="addRow(null)"/>
+    </div>
+  </div>
   <div class="mainDiv" 
     :style="mainDivStyle" ref="mainDiv" 
     @scroll="displayData">
     <table>
       <thead>
         <tr>
+          <th class="header-front-th">
+            <div>
+              <svg-icon type="mdi" :path="mdi.mdiFilterCogOutline"/>
+            </div>
+          </th>
           <th v-for="col in headers" :key="col" 
             :style="col.headerStyle">
-            <div class="header-left">
-              <svg-icon type="mdi" :path="mdi.mdiMagnify" @click="showFilter($event, col)"
-                :class="col.filter ? 'icon-on' : 'icon-off'" />
-            </div>
-            {{ col.title }}
-            <div class="header-right">
-              <svg-icon type="mdi" :path="col.sort || mdi.mdiChevronUp" 
-                :class="col.sort ? 'icon-on' : 'icon-off'" @click="doSortFilter(col)"/>
+            <div class="header-th">
+              <svg-icon type="mdi" 
+                :path="col.filter ? mdi.mdiFilterPlus : mdi.mdiFilterOutline"
+                :class="col.filter ? 'icon-on' : 'icon-off'" 
+                @click="showFilter($event, col)"/>
+              {{ col.title }}
+              <svg-icon type="mdi" 
+                :path="col.sort || mdi.mdiChevronUp" 
+                :class="col.sort ? 'icon-on' : 'icon-off'" 
+                @click="doSortFilter(col)"/>
             </div>
           </th>
         </tr>
@@ -22,6 +34,7 @@
 
       <tfoot>
         <tr>
+          <td></td>
           <td v-for="col in headers" :key="col"
             :style="col.bodyStyle">
             {{ col.title }}
@@ -30,24 +43,21 @@
       </tfoot>
 
       <tbody>
-        <tr>
-          <td :colspan="headers.length">
-            <div :style="topBufferDiv"></div>
+        <div :style="topBufferDiv"></div>
+        <tr v-for="row in displayedList" :key="row" @click="selectRow(row)">
+          <td :class="'header-front-td ' + getClass('tbody td', row)">
+            <div>
+              <svg-icon type="mdi" :path="mdi.mdiMinusBoxOutline"/>
+            </div>
           </td>
-        </tr>
-        <tr v-for="row in displayedList" :key="row">
           <td v-for="col in headers" :key="col" 
-            :style="col.bodyStyle">
+            :style="col.bodyStyle" :class="getClass('tbody td', row)">
             <slot name="body" :item="row" :column="col.key">
               {{ row[col.key] }}
             </slot>
           </td>
         </tr>
-        <tr>
-          <td :colspan="headers.length">
-            <div :style="bottomBufferDiv"></div>
-          </td>
-        </tr>
+        <div :style="bottomBufferDiv"></div>
       </tbody>
     </table>
   </div>
@@ -62,6 +72,7 @@ import PFilterDialog from '@/components/PGrid/PFilterDialog.vue';
 
 defineExpose({
   setList,
+  addRow,
 });
 
 const emit = defineEmits([
@@ -72,6 +83,7 @@ const props = defineProps({
   name: String,
   headers: Array,
   height: Number,
+  width: Number,
   maxRowHeight: {
     type: Number,
     default: 26,
@@ -92,7 +104,13 @@ const mainDiv = ref(null);
 const filterDialog = ref(null);
 
 // local data
-const mainDivStyle = reactive({ height: props.height + 'px' }); // 전체 table을 감싸는 div의 높이 (props)
+const toolbarStyle = reactive({
+  width: props.width + 'px',
+});
+const mainDivStyle = reactive({ 
+  height: props.height + 'px',  // 전체 table을 감싸는 div의 높이
+  width: props.width + 'px'
+});
 
 let orglist = []; // 원본 List (sort, filter, 입력, 수정 아무것도 안된 original)
 let unFilterList = []; // filter 안된 List
@@ -101,6 +119,8 @@ let pGridUniqueIndex = 0;
 const filterList = ref([]); // filter 되는 column들의 List
 const sortedFilteredList = ref([]); // sort & filter 된 List
 const displayedList = ref([]); // tbody에 display 되는 dataList
+
+const selectedRow = reactive({}); // 현재 선택된 row
 
 const topBufferDiv = reactive({ height: 0 }); // tbody display 되는 data 위쪽 buffer div의 높이
 const bottomBufferDiv = reactive({ height: 0 }); // tbody display 되는 data 아래쪽쪽 buffer div의 높이
@@ -118,6 +138,7 @@ function setList(list) {
 
   // refs 초기화
   filterList.value = [];
+  selectedRow.value = {};
 
   // headers 초기화
   props.headers.forEach(col => {
@@ -141,6 +162,7 @@ function setList(list) {
 }
 
 function displayData() {
+  selectedRow.value = {}; // 스크롤 할 경우 선택한 행 초기화
   let scrollTop = 0;
   if(mainDiv.value) scrollTop = mainDiv.value.scrollTop;
 
@@ -252,60 +274,46 @@ function doSortFilter(col) {
   sort(col); // 정렬 함수 호출
   displayData(); // display 함수 호출
 }
+
+// add row
+function addRow(param) {
+  let newRow = null;
+  if(param) {
+    newRow = param;
+    newRow.crud = "C";
+    pGridUniqueIndex = pGridUniqueIndex++;
+  } else {
+    newRow = { 
+      crud: "C",
+      pGridUniqueIndex: pGridUniqueIndex++,
+    };
+  }
+
+  let index = sortedFilteredList.value.findIndex((value) => value == selectedRow.value);
+  if(index > -1) sortedFilteredList.value.splice(index, 0, newRow); // 선택한 행이 있으면 선택한 행 앞에 추가
+  else { // 선택한 행이 없을 땐 맨 앞에 추가하고 맨 위로 이동
+    sortedFilteredList.value.unshift(newRow); // 배열에 추가
+    mainDiv.value.scrollTop = 0; // 스크롤 이동
+  }
+  
+  displayData(); // display 함수 호출
+}
+
+// select row
+function selectRow(item) {
+  selectedRow.value = item;
+}
+
+// 조건부 class
+function getClass(location, param) {
+  if(location == 'tbody td') {
+    if(selectedRow.value == param) {
+      return 'selected';
+    }
+  }
+}
 </script>
 
 <style scoped>
-table { 
-  border-collapse: collapse;
-  width: 100%; 
-}
-
-.mainDiv {
-  overflow: auto;
-}
-.mainDiv thead tr th {
-  background-color: #42b983;
-  opacity: 100%;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-.mainDiv thead tr:nth-child(2) th {
-  position: sticky;
-  top: 26px;
-  z-index: 1;
-}
-.mainDiv thead tr:nth-child(3) th {
-  position: sticky;
-  top: 52px;
-  z-index: 1;
-}
-.mainDiv tfoot tr {
-  background-color: #42b983;
-  opacity: 100%;
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
-}
-
-.header-left {
-  float: left;
-  height: 24px;
-}
-.header-right {
-  float: right; 
-  height: 24px;
-}
-
-.icon-off {
-  opacity: 50%;
-}
-.icon-off:hover {
-  opacity: 100%;
-}
-
-.icon-on {
-  opacity: 100%;
-  color: pink;
-}
+@import './PGrid.css';
 </style>

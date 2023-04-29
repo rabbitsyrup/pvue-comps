@@ -1,0 +1,83 @@
+.toolbar {
+  background-color: royalblue;
+  height: 24px;
+}
+
+.mainDiv {
+  overflow: auto;
+}
+.mainDiv table { 
+  border-collapse: collapse;
+  width: 100%; 
+}
+.mainDiv table thead tr th {
+  background-color: #42b983;
+  opacity: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  color: lightgoldenrodyellow;
+}
+.mainDiv table thead tr:nth-child(2) th {
+  top: var(--thead-row-height);
+}
+.mainDiv table thead tr:nth-child(3) th {
+  top: calc(var(--thead-row-height) * 2);
+}
+.mainDiv table thead tr:nth-child(4) th {
+  top: calc(var(--thead-row-height) * 3);
+}
+.mainDiv table thead tr:nth-child(5) th {
+  top: calc(var(--thead-row-height) * 4);
+}
+.mainDiv table tfoot tr td {
+  background-color: #42b983;
+  opacity: 100%;
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+}
+.mainDiv table tbody tr:nth-child(odd) td {
+  background-color: rosybrown;
+}
+.mainDiv table tbody tr:nth-child(even) td {
+  background-color: lightslategrey;
+}
+.mainDiv table tbody tr:hover td {
+  background-color: rgb(155, 207, 255);
+}
+.mainDiv table tbody tr td.selected {
+  background-color: rgb(155, 207, 255);
+}
+
+.header-front-th, .header-front-td {
+  width: 24px;
+}
+.header-front-th div, .header-front-td div {
+  height: 24px;
+}
+
+.header-th {
+  display: flex;
+  justify-content : right;
+  align-items: center;
+  height: 24px;
+}
+
+.icon-on {
+  opacity: 100%;
+  color: lightgoldenrodyellow;
+}
+.icon-off {
+  opacity: 50%;
+}
+.icon-off:hover {
+  opacity: 100%;
+}
+
+.selected-row {
+  text-decoration: line-through;
+}
+.deleted-row {
+  text-decoration: line-through;
+}

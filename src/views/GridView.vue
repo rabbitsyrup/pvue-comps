@@ -2,9 +2,11 @@
   <PGrid ref="PGrid"
     :name="'PGrid'"
     :headers="columns"
-    :height="height"
+    :height="300"
+    :width="600"
   >
-  </PGrid><span @click="setGrid">123</span>
+  </PGrid>
+  <a href="javascript:;" @click="setGrid">Data Reset</a>
 </template>
 
 <script>
@@ -29,45 +31,23 @@ export default {
     columns: [
       { title: 'NO', key: 'no', 
         headerStyle: { width: '100px' }, 
-        bodyStyle: { textAlign: 'left' }} ,
-      { title: 'NAME', key: 'name', },
-      { title: 'AGE', key: 'age', },
+        bodyStyle: { textAlign: 'right' }} ,
+      { title: 'NAME', key: 'name', 
+        bodyStyle: { textAlign: 'right' }},
+      { title: 'AGE', key: 'age', 
+        bodyStyle: { textAlign: 'right' }},
       { title: 'NICKNAME', key: 'nickname', 
         headerStyle: { width: '200px' }, 
         bodyStyle: { textAlign: 'right' }},
     ],
-    height: 300,
-    namePool: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'    
   }),
   mounted() {
-    //this.createData();
     this.$refs.PGrid.setList(this.data);
   },
   methods: {
     setGrid() {
       this.$refs.PGrid.setList(this.data);
     },
-    createData() {
-      for(let i=1; i<=10; ++i) {
-        this.data.push(
-          {
-            no: i,
-            name: this.namePool.charAt(i),
-            age: Math.floor((Math.random() * 30)+20),
-            nickname: this.namePool.charAt(Math.floor(Math.random() * 24)) + this.namePool.charAt(Math.floor(Math.random() * 24))
-          }
-        ) 
-      }
-    }
   }
 }
 </script>
-
-<style>
-tbody tr:nth-child(odd) td {
-  background-color: black;
-}
-tbody tr:nth-child(even) td {
-  background-color: grey;
-}
-</style>

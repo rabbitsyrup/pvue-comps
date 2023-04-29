@@ -2,7 +2,8 @@
   <PGrid ref="PGrid"
     :name="'PGrid'"
     :headers="columns"
-    :height="height"
+    :height="500"
+    :width="600"
     :max-row-height="50"
     :v-panel-size="2"
   >
@@ -12,6 +13,7 @@
       {{ item[column] }}
     </template>
   </PGrid>
+  <a href="javascript:;" @click="setGrid">Data Reset</a>
 </template>
 
 <script>
@@ -26,14 +28,15 @@ export default {
     columns: [
       { title: 'NO', key: 'no', 
         headerStyle: { width: '100px' }, 
-        bodyStyle: { textAlign: 'left' }} ,
-      { title: 'NAME', key: 'name', },
-      { title: 'AGE', key: 'age', },
+        bodyStyle: { textAlign: 'right' }} ,
+      { title: 'NAME', key: 'name', 
+        bodyStyle: { textAlign: 'right' }},
+      { title: 'AGE', key: 'age', 
+        bodyStyle: { textAlign: 'right' }},
       { title: 'NICKNAME', key: 'nickname', 
         headerStyle: { width: '200px' }, 
         bodyStyle: { textAlign: 'right' }},
     ],
-    height: 300,
     namePool: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'    
   }),
   mounted() {
@@ -41,6 +44,9 @@ export default {
     this.$refs.PGrid.setList(this.data);
   },
   methods: {
+    setGrid() {
+      this.$refs.PGrid.setList(this.data);
+    },
     createData() {
       for(let i=1; i<=5000; ++i) {
         this.data.push(

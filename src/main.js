@@ -5,6 +5,7 @@ import CKEditor from '@ckeditor/ckeditor5-vue';
 import SvgIcon from '@jamescoyle/vue-icon';
 
 import './assets/main.css'
+import './assets/PGrid.css'
 
 const app = createApp(App)
 
