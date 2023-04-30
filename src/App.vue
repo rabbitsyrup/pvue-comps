@@ -15,6 +15,7 @@ import { RouterLink, RouterView } from 'vue-router'
         <!-- <RouterLink to="/about">About</RouterLink> -->
         <RouterLink to="/grid">grid</RouterLink>
         <RouterLink to="/multiRowGrid">grid (multi rows)</RouterLink>
+        <RouterLink to="/customSlotGrid">grid (custom slot)</RouterLink>
         <RouterLink to="/editor">ckEditor</RouterLink>
       </nav>
     </div>

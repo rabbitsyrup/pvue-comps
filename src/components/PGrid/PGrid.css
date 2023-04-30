@@ -2,6 +2,14 @@
   var 함수에 쓰이는 변수들은
   @/assets/PGrid.css 파일에서 수정 필요
  */
+.vertical-bar {
+  padding: 0;
+  margin: 0px 5px 0px 5px;
+  width: 1px;
+  height: 70%;
+  opacity: 50%;
+  background-color: var(--color-text);
+}
 
 .toolbar {
   background-color: royalblue;
@@ -14,28 +22,12 @@
   justify-content : left;
   align-items: center;
 }
-.toolbar .left-box .vertical-bar {
-  padding: 0;
-  margin: 0px 5px 0px 5px;
-  width: 1px;
-  height: 70%;
-  opacity: 50%;
-  background-color: var(--color-text);
-}
 .toolbar .right-box {
   float: right;
   height: var(--toolbar-height);
   display: flex;
   justify-content : right;
   align-items: center;
-}
-.toolbar .right-box .vertical-bar {
-  padding: 0;
-  margin: 0px 5px 0px 5px;
-  width: 1px;
-  height: 70%;
-  opacity: 50%;
-  background-color: var(--color-text);
 }
 
 .mainDiv {

@@ -20,7 +20,8 @@
     <table>
       <thead>
         <tr v-for="(headerGroup, index) in headerGroups" :key="headerGroup">
-          <th v-if="index == 0" :rowspan="headerGroups.length">
+          <th v-if="index == 0" :rowspan="headerGroups.length"
+            style="width: 30px;">
             <div class="icon-box">
               <svg-icon type="mdi" :path="mdi.mdiPlusBoxOutline" 
                 class="icon-off" @click="addRow(null)"/>
@@ -69,14 +70,14 @@
             @click="openEditor(index, col)">
             <slot v-if="col.customSlot" name="body" :item="row" :column="col.key"><!-- custom slot --></slot>
             
-            <span v-else-if="col.editType == 'text' && (editor.index != index || editor.key != col.key)">
-              {{ row[col.key] }}
-            </span>
-
             <input v-else-if="col.editType == 'text' && (editor.index == index && editor.key == col.key)"
-              type="text" v-focus
-              @update:focused="eventTest" @keydown.enter="eventTest"
+              type="text" v-focus style="width: 100%;"
+              @blur="closeEditor" @keydown.enter="closeEditor"
               v-model="row[col.key]" />
+
+            <PSelect v-else-if="col.editType == 'select' && (editor.index == index && editor.key == col.key)" 
+              v-model="row[col.key]" :items="codeList[col.key]" code="cd" name="cd_nm" 
+              @blur="closeEditor" v-focus style="width: 100%;"/>
 
             <span v-else><!-- default -->
               {{ row[col.key] }}
@@ -94,7 +95,8 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue';
 import * as mdi from '@mdi/js';
-import PFilterDialog from '@/components/PGrid/PFilterDialog.vue';
+import PFilterDialog from '../PGrid/PFilterDialog.vue';
+import PSelect from '../PSelect/PSelect.vue';
 
 defineExpose({
   setList,
@@ -116,6 +118,7 @@ const props = defineProps({
   width: String,
   watcherList: Array,
   readonly: Boolean,
+  codeList: Object,
   maxRowHeight: {
     type: Number,
     default: 26,
@@ -158,28 +161,70 @@ const sortedFilteredList = ref([]); // sort & filter 된 List
 const displayedList = ref([]); // tbody에 display 되는 dataList
 const headers = computed({ // headerGroups에 의해 계산된 header 배열
   get() {
-    let rtn = [];
-    props.headerGroups.forEach(row => {
-    row.forEach(col => {
-        if(!col.grouping) {
-          rtn.push(col);
-        }
-      })
-    })
-    return rtn;
+    if(props.headerGroups.length == 1) {
+      return props.headerGroups[0];
+    } else {
+      let que = {};
+      props.headerGroups.forEach(row => {
+        let cursor = 0;
+        row.forEach(col => {
+          if(!col.grouping) {
+            let flag = true;
+            while(flag) {
+              if(!que['col_' + cursor] || (que['col_' + cursor] && que['col_' + cursor].grouping)) {
+                que['col_' + cursor++] = col;
+                flag = false;
+              } else {
+                cursor++;
+              }
+            }
+          } else {
+            for(let i = 0; i < col.grouping.colspan; i++) {
+              que['col_' + cursor++] = col;
+            }
+          }
+        });
+      });
+      let rtn = [];
+      for(let i = 0; i < Object.keys(que).length; i++) {
+        rtn.push(que['col_' + i]);
+      }
+      return rtn;
+    }
   },
   set(value) {
-    let rtn = [];
-    props.headerGroups.forEach(row => {
-    row.forEach(col => {
-        if(!col.grouping) {
-          rtn.push(col);
-        }
-      })
-    })
-    rtn = value;
+    if(props.headerGroups.length == 1) {
+      return props.headerGroups[0];
+    } else {
+      let que = {};
+      props.headerGroups.forEach(row => {
+        let cursor = 0;
+        row.forEach(col => {
+          if(!col.grouping) {
+            let flag = true;
+            while(flag) {
+              if(!que['col_' + cursor] || (que['col_' + cursor] && que['col_' + cursor].grouping)) {
+                que['col_' + cursor++] = col;
+                flag = false;
+              } else {
+                cursor++;
+              }
+            }
+          } else {
+            for(let i = 0; i < col.grouping.colspan; i++) {
+              que['col_' + cursor++] = col;
+            }
+          }
+        });
+      });
+      let rtn = [];
+      for(let i = 0; i < Object.keys(que).length; i++) {
+        rtn.push(que['col_' + i]);
+      }
+      rtn = value;
+    }
   }
-})  
+});
 
 const selectedRow = ref({}); // 현재 선택된 row
 
@@ -198,6 +243,10 @@ function openEditor(index, col) {
 function closeEditor() {
   editor.value.index = -1;
   editor.value.key = -1;
+}
+
+function eventTest(event) {
+  console.log(event)
 }
 
 // methods

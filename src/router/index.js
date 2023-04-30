@@ -28,6 +28,11 @@ const router = createRouter({
       component: () => import('../views/MultiRowGridView.vue')
     },
     {
+      path: '/customSlotGrid',
+      name: 'customSlotGrid',
+      component: () => import('../views/CustomSlotGridView.vue')
+    },
+    {
       path: '/editor',
       name: 'editor',
       component: () => import('../views/EditorView.vue')

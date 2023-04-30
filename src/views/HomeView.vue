@@ -16,11 +16,18 @@
       <li>filter</li>
       <li>modal dialog</li>
 
+      <hr>
+
       <h4>- 23. 04. 30.</h4>
       <li>addRow, deleteRow, restore</li>
       <li>전체 검색</li>
       <li>dialog 이벤트 버블링 제거</li>
       <li>Multi Header</li>
+
+      <hr>
+
+      <h4>- 23. 05. 01.</h4>
+      <li>select</li>
     </ul>
   </main>
 </template>
