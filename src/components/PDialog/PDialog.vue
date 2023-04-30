@@ -1,14 +1,14 @@
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="show" class="modal-mask">
-        <div class="modal-container" :style="containerStyle">
+      <div v-if="show" class="modal-mask" @click="close($event, 'mask-area')">
+        <div class="modal-container" :style="containerStyle" @click="close($event, 'container-area')">
           <div class="modal-header">
             {{ title }}
             <svg-icon type="mdi"
               style="float: right;" 
               :path="mdi.mdiClose" 
-              @click="close"/>
+              @click="close($event, 'close-btn')"/>
           </div>
 
           <div class="modal-body">
@@ -42,6 +42,7 @@ const props = defineProps({
   show: Boolean,
   top: Number,
   left: Number,
+  persistence: String,
 });
 
 const show = computed({
@@ -61,8 +62,15 @@ const containerStyle = computed(() => {
   } 
 });
 
-function close() {
-  emit('close');
+function close(event, eventFrom) {
+  event.stopPropagation(); // event 버블링 방지
+  if(eventFrom == 'mask-area') {
+    if(props.persistence == null) {
+      emit('close');
+    }
+  } else if (eventFrom == 'close-btn') {
+    emit('close');
+  }
 }
 </script>
 
@@ -79,6 +87,7 @@ function close() {
   transition: opacity 0.3s ease;
 }
 .modal-container {
+  z-index: 9999;
   position: absolute;
   margin: auto;
   background-color: grey;

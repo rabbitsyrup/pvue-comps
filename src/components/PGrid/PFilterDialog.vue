@@ -51,12 +51,6 @@ const left = ref(0);
 const col = reactive({});
 const filterList = toRef(props, 'filterList');
 
-watch(show, (val) => {
-  if(!val) {
-    emit('filter', filterList);
-  }
-})
-
 function open(event, item) {
   col.value = item;
   top.value = event.clientY;

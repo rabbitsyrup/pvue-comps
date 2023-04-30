@@ -14,13 +14,28 @@
   justify-content : left;
   align-items: center;
 }
+.toolbar .left-box .vertical-bar {
+  padding: 0;
+  margin: 0px 5px 0px 5px;
+  width: 1px;
+  height: 70%;
+  opacity: 50%;
+  background-color: var(--color-text);
+}
 .toolbar .right-box {
   float: right;
   height: var(--toolbar-height);
-  padding-right: 5px;
   display: flex;
   justify-content : right;
   align-items: center;
+}
+.toolbar .right-box .vertical-bar {
+  padding: 0;
+  margin: 0px 5px 0px 5px;
+  width: 1px;
+  height: 70%;
+  opacity: 50%;
+  background-color: var(--color-text);
 }
 
 .mainDiv {

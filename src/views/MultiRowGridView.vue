@@ -1,9 +1,9 @@
 <template>
   <PGrid ref="PGrid"
-    :name="'PGrid'"
-    :headers="columns"
+    title="Multi-Row Grid"
+    width="600"
+    :headerGroups="headerGroups"
     :height="300"
-    :width="600"
     :max-row-height="26"
     :v-panel-size="1"
   >
@@ -21,8 +21,8 @@
   <a href="javascript:;" @click="getUnFilterData">getUnFilterData</a>
   <div>
     <br>
-    <div v-for="filterd in outUnFilterData" :key="filterd">
-      {{ filterd }}
+    <div v-for="out in outUnFilterData" :key="out">
+      {{ out }}
     </div>
   </div>
 </template>
@@ -48,15 +48,18 @@ export default {
       {no: 4, name: 'C', age: 20, nickname: '해수면'},
       {no: 5, name: 'C', age: 22, nickname: '해수면'},
     ],
-    columns: [
-      { title: 'NO', key: 'no', dataType: 'number', width: 100, 
-        align: 'right', } ,
-      { title: 'NAME', key: 'name', dataType: 'string', align: 'right', 
-        editType: 'text', },
-      { title: 'AGE', key: 'age', dataType: 'number', align: 'right', },
-      { title: 'NICKNAME', key: 'nickname', dataType: 'string', width: 200, 
-        align: 'right', customSlot: true, },
-    ], 
+    headerGroups: [
+      [ // row 1 (top row)
+        { title: 'NO', key: 'no', dataType: 'number', width: 100, align: 'center', },
+        { title: 'INFORMATION', grouping: {colspan: 3} },
+      ],
+      [ // row 2 (second row)
+        { title: 'NAME', key: 'name', dataType: 'string', align: 'center', editType: 'text', },
+        { title: 'AGE', key: 'age', dataType: 'number', align: 'center', },
+        { title: 'NICKNAME', key: 'nickname', dataType: 'string', width: 200, 
+          align: 'right', customSlot: true, },
+      ]
+    ]
   }),
   mounted() {
     this.$refs.PGrid.setList(this.data);

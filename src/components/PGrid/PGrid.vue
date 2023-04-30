@@ -1,13 +1,17 @@
 <template>
   <div class="toolbar" :style="toolbarStyle">
     <div class="left-box">
-      <svg-icon type="mdi" class="icon-off" :path="mdi.mdiFilterCogOutline"/>
-    </div>
-    <div class="right-box">
       <svg-icon type="mdi" class="icon-off" :path="mdi.mdiHistory"
         @click="restoreData"/>
-      <svg-icon type="mdi" :path="mdi.mdiMagnify"/>
+      <div class="vertical-bar"></div>
+      {{ title }}
+    </div>
+    <div class="right-box">
+      <svg-icon type="mdi" class="icon-off" :path="mdi.mdiFilterRemoveOutline" @click="restoreSortFilter"/>
+      <div class="vertical-bar"></div>
       <input type="text" v-model="searchText" @keydown.enter="doSortFilter"/>
+      <svg-icon type="mdi" class="icon-off" :path="mdi.mdiMagnify"
+        @click="doSortFilter"/>
     </div>
   </div>
   <div class="mainDiv" 
@@ -15,22 +19,24 @@
     @scroll="displayData">
     <table>
       <thead>
-        <tr>
-          <th>
+        <tr v-for="(headerGroup, index) in headerGroups" :key="headerGroup">
+          <th v-if="index == 0" :rowspan="headerGroups.length">
             <div class="icon-box">
               <svg-icon type="mdi" :path="mdi.mdiPlusBoxOutline" 
                 class="icon-off" @click="addRow(null)"/>
             </div>
           </th>
-          <th v-for="col in headers" :key="col" 
+          <th v-for="col in headerGroup" :key="col" 
+            :rowspan="index == 0 && !col.grouping ? headerGroups.length : col.grouping ? col.grouping.rowspan : ''" 
+            :colspan="col.grouping ? col.grouping.colspan : ''"
             :style="{width: col.width + 'px'}">
             <div class="header-th">
-              <svg-icon type="mdi" 
+              <svg-icon type="mdi" v-if="!col.grouping"
                 :path="col.filter ? mdi.mdiFilter : mdi.mdiFilterOutline"
                 :class="col.filter ? 'icon-on' : 'icon-off'" 
                 @click="showFilter($event, col)"/>
               {{ col.title }}
-              <svg-icon type="mdi" 
+              <svg-icon type="mdi" v-if="!col.grouping" 
                 :path="col.sort || mdi.mdiChevronUp" 
                 :class="col.sort ? 'icon-on' : 'icon-off'" 
                 @click="doSortFilter(col)"/>
@@ -61,22 +67,20 @@
           <td v-for="col in headers" :key="col" 
             :style="{textAlign: col.align}" :class="getClass('tbody td', row)"
             @click="openEditor(index, col)">
-            <Transition>
-              <slot v-if="col.customSlot" name="body" :item="row" :column="col.key"><!-- custom slot --></slot>
-              
-              <span v-else-if="col.editType == 'text' && (editor.index != index || editor.key != col.key)">
-                {{ row[col.key] }}
-              </span>
+            <slot v-if="col.customSlot" name="body" :item="row" :column="col.key"><!-- custom slot --></slot>
+            
+            <span v-else-if="col.editType == 'text' && (editor.index != index || editor.key != col.key)">
+              {{ row[col.key] }}
+            </span>
 
-              <input v-else-if="col.editType == 'text' && (editor.index == index && editor.key == col.key)"
-                type="text" autofocus
-                @update:focused="eventTest" @keydown.enter="eventTest"
-                v-model="row[col.key]" />
+            <input v-else-if="col.editType == 'text' && (editor.index == index && editor.key == col.key)"
+              type="text" v-focus
+              @update:focused="eventTest" @keydown.enter="eventTest"
+              v-model="row[col.key]" />
 
-              <span v-else><!-- default -->
-                {{ row[col.key] }}
-              </span>
-            </Transition>
+            <span v-else><!-- default -->
+              {{ row[col.key] }}
+            </span>
           </td>
         </tr>
         <div :style="bottomBufferDiv"></div>
@@ -106,10 +110,10 @@ const emit = defineEmits([
 ]);
 
 const props = defineProps({
-  name: String,
-  headers: Array,
+  title: String,
+  headerGroups: Array,
   height: Number,
-  width: Number,
+  width: String,
   watcherList: Array,
   readonly: Boolean,
   maxRowHeight: {
@@ -152,6 +156,30 @@ const searchText = ref("");
 const filterList = ref([]); // filter 되는 column들의 List
 const sortedFilteredList = ref([]); // sort & filter 된 List
 const displayedList = ref([]); // tbody에 display 되는 dataList
+const headers = computed({ // headerGroups에 의해 계산된 header 배열
+  get() {
+    let rtn = [];
+    props.headerGroups.forEach(row => {
+    row.forEach(col => {
+        if(!col.grouping) {
+          rtn.push(col);
+        }
+      })
+    })
+    return rtn;
+  },
+  set(value) {
+    let rtn = [];
+    props.headerGroups.forEach(row => {
+    row.forEach(col => {
+        if(!col.grouping) {
+          rtn.push(col);
+        }
+      })
+    })
+    rtn = value;
+  }
+})  
 
 const selectedRow = ref({}); // 현재 선택된 row
 
@@ -161,27 +189,25 @@ const bottomBufferDiv = reactive({ height: 0 }); // tbody display 되는 data �
 const loadSizeHeight = computed(() => props.height * props.vPanelSize); // tbody에 display 되는 layer size 높이
 const totalScrollableHeight = computed(() => sortedFilteredList.value.length * props.maxRowHeight);
 
-function eventTest(t) {console.log(t)}
-
 function openEditor(index, col) {
   if(props.readonly) return;
   editor.value.index = index;
   editor.value.key = col.key;
 }
 
-function closeEditor() {console.log(editor)
+function closeEditor() {
   editor.value.index = -1;
   editor.value.key = -1;
 }
 
 // methods
 function setList(list) { 
-  toggleWatcher(false);
+  if(watcher.on) toggleWatcher(false);
 
   // grid init 역할을 하고 있는데 혹시 필요시 method 분리 필요
   // 변수 초기화
-  sortList = [];
   pGridUniqueIndex = 0;
+  sortList = [];
 
   // refs 초기화
   searchText.value = "";
@@ -190,7 +216,7 @@ function setList(list) {
   closeEditor();
 
   // headers 초기화
-  props.headers.forEach(col => {
+  headers.value.forEach(col => {
     if(col.filter) col.filter = false;
     if(col.filterText) col.filterText = '';
     if(col.sort) col.sort = '';
@@ -210,7 +236,7 @@ function setList(list) {
   // 최초 display
   displayData();
   
-  toggleWatcher(true);
+  if(!watcher.on) toggleWatcher(true);
 }
 
 function getList() {
@@ -222,6 +248,8 @@ function getUnFilterList() {
 }
 
 function displayData() {
+  if(watcher.on) toggleWatcher(false);
+
   selectedRow.value = {}; // 스크롤 할 경우 선택한 행 초기화
   let scrollTop = 0;
   if(mainDiv.value) scrollTop = mainDiv.value.scrollTop;
@@ -236,6 +264,8 @@ function displayData() {
   displayedList.value = sortedFilteredList.value.slice(startIndex, endIndex + 1);
   topBufferDiv.height = startIndex * props.maxRowHeight + 'px';
   bottomBufferDiv.height = Math.max(0, (sortedFilteredList.value.length - endIndex - 1) * props.maxRowHeight) + 'px';
+
+  if(!watcher.on) toggleWatcher(true);
 }
 
 // filter Dialog 함수
@@ -245,6 +275,7 @@ function showFilter(event, col) {
 
 // sort & filter 함수
 function doSortFilter(col) {
+  if(watcher.on) toggleWatcher(false);
   // 각각 서로 호출하게 하면 결국 순환 참조 오류가 생겨서 하나로 묶어야 함 (filter function + sort function)
  
   // 일단 정렬 없는 원래 상태로 복구
@@ -270,7 +301,7 @@ function doSortFilter(col) {
   if(searchText.value.length > 0) {
     sortedFilteredList.value = sortedFilteredList.value.filter(item => {
       let rtn = false;
-      props.headers.forEach(value => {
+      headers.value.forEach(value => {
         if(String(item[value.key]).includes(searchText.value)) rtn = true;
       })
       return rtn;
@@ -322,6 +353,8 @@ function doSortFilter(col) {
   // SORT END
 
   displayData(); // display 함수 호출
+
+  if(!watcher.on) toggleWatcher(true);
 }
 
 // custom 비교 함수
@@ -347,16 +380,42 @@ function compare(a, b) {
   return rtn;
 }
 
+// sort & filter 없애기
+function restoreSortFilter() {
+  if(watcher.on) toggleWatcher(false);
+  sortList = [];
+  searchText.value = "";
+  filterList.value = [];
+  selectedRow.value = {};
+  closeEditor();
+
+  headers.value.forEach(col => {
+    if(col.filter) col.filter = false;
+    if(col.filterText) col.filterText = '';
+    if(col.sort) col.sort = '';
+  });
+
+  doSortFilter();
+  if(!watcher.on) toggleWatcher(true);
+}
+
 // edit 전 상태로 data 복구
 function restoreData() {
+  if(watcher.on) toggleWatcher(false);
+
   //sortedFilteredList.value = [...orglist];
   sortedFilteredList.value = JSON.parse(JSON.stringify(orglist));
   unFilterList = [...sortedFilteredList.value];
+  closeEditor();
   doSortFilter();
+
+  if(!watcher.on) toggleWatcher(true);
 }
 
 // add row
 function addRow(param) {
+  if(watcher.on) toggleWatcher(false);
+  
   let newRow = null;
   if(param) {
     newRow = param;
@@ -377,10 +436,14 @@ function addRow(param) {
   }
   
   displayData(); // display 함수 호출
+
+  if(!watcher.on) toggleWatcher(true);
 }
 
 // delete row
 function deleteRow(row) {
+  if(watcher.on) toggleWatcher(false);
+
   if(row) {
     selectRow(row);
   }
@@ -391,7 +454,6 @@ function deleteRow(row) {
     return;
   }
   
-  toggleWatcher(false);
   if(selectedRow.value.crud && selectedRow.value.crud == "C") {
     sortedFilteredList.value.splice(selectedIndex, 1);
     selectedRow.value = {};
@@ -400,17 +462,18 @@ function deleteRow(row) {
   } else {
     selectedRow.value.crud = "D";
   }
-  toggleWatcher(true);
 
   displayData(); // display 함수 호출
+  
+  if(!watcher.on) toggleWatcher(true);
 }
 
 // select row
 function selectRow(item) {
-  toggleWatcher(false);
+  if(watcher.on) toggleWatcher(false);
   selectedRow.value = item;
   emit('selectRow', item);
-  toggleWatcher(true);
+  if(!watcher.on) toggleWatcher(true);
 }
 
 // 조건부 class
@@ -424,8 +487,12 @@ function getClass(location, param) {
 }
 
 // watch
-const watcher = {};
+const watcher = {
+  default: null,
+  on: false,
+};
 function toggleWatcher(bool) {
+  watcher.on = bool;
   if(bool) {
     watcher.default = watch(sortedFilteredList, () => {
       let selectedIndex = sortedFilteredList.value.findIndex((value) => value == selectedRow.value);

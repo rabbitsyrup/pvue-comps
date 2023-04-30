@@ -1,9 +1,9 @@
 <template>
   <PGrid ref="PGrid"
-    :name="'PGrid'"
-    :headers="columns"
+    title="V-Scroll Grid"
+    width="600"
+    :headerGroups="headerGroups"
     :height="500"
-    :width="600"
   >
   </PGrid>
 </template>
@@ -17,14 +17,13 @@ export default {
   },
   data: () => ({
     data: [],
-    columns: [
-      { title: 'NO', key: 'no', dataType: 'number', width: 100, 
-        align: 'right', } ,
-      { title: 'NAME', key: 'name', dataType: 'string', align: 'right', 
-        editType: 'text', },
-      { title: 'AGE', key: 'age', dataType: 'number', align: 'right', },
-      { title: 'NICKNAME', key: 'nickname', dataType: 'string', width: 200, 
-        align: 'right', },
+    headerGroups: [
+      [
+        { title: 'NO', key: 'no', dataType: 'number', width: 100, align: 'center', } ,
+        { title: 'NAME', key: 'name', dataType: 'string', align: 'center', editType: 'text', },
+        { title: 'AGE', key: 'age', dataType: 'number', align: 'center', },
+        { title: 'NICKNAME', key: 'nickname', dataType: 'string', width: 200, align: 'right', },
+      ]
     ],
     namePool: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
   }),
@@ -34,7 +33,7 @@ export default {
   },
   methods: {
     createData() {
-      for(let i = 1; i <= 5000; ++i) {
+      for(let i = 1; i <= 10000; ++i) {
         this.data.push(
           {
             no: i,

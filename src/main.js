@@ -12,5 +12,9 @@ const app = createApp(App)
 app.use(router)
   .use( CKEditor )
   .component('SvgIcon', SvgIcon)
+  .directive('focus', {
+    mounted: (el) => el.focus()
+  })
+  .directive('name',{})
 
 app.mount('#app')
