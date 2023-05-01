@@ -1,12 +1,12 @@
 <template>
   <div class="toolbar" :style="toolbarStyle">
     <div class="left-box">
-      <svg-icon type="mdi" class="icon-off" :path="mdi.mdiHistory"
+      <svg-icon v-if="!readonly && !(noAdd && noDelete)" type="mdi" class="icon-off" :path="mdi.mdiHistory"
         @click="restoreData"/>
       <div class="vertical-bar"></div>
       {{ title }}
     </div>
-    <div class="right-box">
+    <div v-if="!noFilter" class="right-box">
       <svg-icon type="mdi" class="icon-off" :path="mdi.mdiFilterRemoveOutline" @click="restoreSortFilter"/>
       <div class="vertical-bar"></div>
       <input type="text" v-model="searchText" @keydown.enter="doSortFilter"/>
@@ -20,9 +20,9 @@
     <table>
       <thead>
         <tr v-for="(headerGroup, index) in headerGroups" :key="headerGroup">
-          <th v-if="index == 0" :rowspan="headerGroups.length"
+          <th v-if="index == 0 && !readonly && !(noAdd && noDelete)" :rowspan="headerGroups.length"
             style="width: 30px;">
-            <div class="icon-box">
+            <div v-if="!noAdd" class="icon-box">
               <svg-icon type="mdi" :path="mdi.mdiPlusBoxOutline" 
                 class="icon-off" @click="addRow(null)"/>
             </div>
@@ -32,12 +32,12 @@
             :colspan="col.grouping ? col.grouping.colspan : ''"
             :style="{width: col.width + 'px'}">
             <div class="header-th">
-              <svg-icon type="mdi" v-if="!col.grouping"
+              <svg-icon type="mdi" v-if="!col.grouping && !noFilter"
                 :path="col.filter ? mdi.mdiFilter : mdi.mdiFilterOutline"
                 :class="col.filter ? 'icon-on' : 'icon-off'" 
                 @click="showFilter($event, col)"/>
               {{ col.title }}
-              <svg-icon type="mdi" v-if="!col.grouping" 
+              <svg-icon type="mdi" v-if="!col.grouping && !noFilter" 
                 :path="col.sort || mdi.mdiChevronUp" 
                 :class="col.sort ? 'icon-on' : 'icon-off'" 
                 @click="doSortFilter(col)"/>
@@ -48,7 +48,7 @@
 
       <tfoot>
         <tr>
-          <td></td>
+          <td v-if="!readonly && !(noAdd && noDelete)"></td>
           <td v-for="col in headers" :key="col"
             :style="col.bodyStyle">
             {{ col.title }}
@@ -59,8 +59,8 @@
       <tbody>
         <div :style="topBufferDiv"></div>
         <tr v-for="(row, index) in displayedList" :key="row" @click="selectRow(row)">
-          <td :class="getClass('tbody td', row)">
-            <div class="icon-box">
+          <td v-if="!readonly && !(noAdd && noDelete)" :class="getClass('tbody td', row)">
+            <div v-if="!noDelete" class="icon-box">
               <svg-icon type="mdi" :path="row.crud == 'D' ? mdi.mdiRestore : mdi.mdiMinusBoxOutline" 
                 class="icon-off" @click="deleteRow(row)"/>
             </div>
@@ -70,18 +70,24 @@
             @click="openEditor(index, col)">
             <slot v-if="col.customSlot" name="body" :item="row" :column="col.key"><!-- custom slot --></slot>
             
-            <input v-else-if="col.editType == 'text' && (editor.index == index && editor.key == col.key)"
-              type="text" v-focus style="width: 100%;"
-              @blur="closeEditor" @keydown.enter="closeEditor"
-              v-model="row[col.key]" />
+            <div v-else-if="col.editType == 'text' && (editor.index == index && editor.key == col.key)"
+              style="height: rowHeight">
+              <input
+                type="text" v-focus style="width: 100%;"
+                @blur="closeEditor" @keydown.enter="closeEditor"
+                v-model="row[col.key]" />
+            </div>
 
-            <PSelect v-else-if="col.editType == 'select' && (editor.index == index && editor.key == col.key)" 
-              v-model="row[col.key]" :items="codeList[col.key]" code="cd" name="cd_nm" 
-              @blur="closeEditor" v-focus style="width: 100%;"/>
+            <div v-else-if="col.editType == 'select' && !readonly"
+              style="height: rowHeight">
+              <PSelect style="width: 100%;"
+                v-model="row[col.key]" :items="codeList[col.codeList? col.codeList:col.key]" 
+                :code="col.codeValue? col.codeValue:'cd'" :name="col.codeTitle? col.codeTitle:'cd_nm'"/>
+            </div>
 
-            <span v-else><!-- default -->
+            <div v-else style="height: rowHeight"><!-- default -->
               {{ row[col.key] }}
-            </span>
+            </div>
           </td>
         </tr>
         <div :style="bottomBufferDiv"></div>
@@ -108,7 +114,8 @@ defineExpose({
 });
 
 const emit = defineEmits([
-  'selectRow'
+  'selectRow',
+  'valueChange',
 ]);
 
 const props = defineProps({
@@ -118,8 +125,15 @@ const props = defineProps({
   width: String,
   watcherList: Array,
   readonly: Boolean,
+  noFilter: Boolean,
+  noAdd: Boolean,
+  noDelete: Boolean,
   codeList: Object,
-  maxRowHeight: {
+  rowHeight: {
+    type: String,
+    default: '26px',
+  },
+  vRowHeight: {
     type: Number,
     default: 26,
     // 가상 패널 Row 수 계산에 쓸 rowHeight (실제 rowheight의 Max 값)
@@ -232,7 +246,7 @@ const topBufferDiv = reactive({ height: 0 }); // tbody display 되는 data 위�
 const bottomBufferDiv = reactive({ height: 0 }); // tbody display 되는 data 아래쪽쪽 buffer div의 높이
 
 const loadSizeHeight = computed(() => props.height * props.vPanelSize); // tbody에 display 되는 layer size 높이
-const totalScrollableHeight = computed(() => sortedFilteredList.value.length * props.maxRowHeight);
+const totalScrollableHeight = computed(() => sortedFilteredList.value.length * props.vRowHeight);
 
 function openEditor(index, col) {
   if(props.readonly) return;
@@ -243,10 +257,6 @@ function openEditor(index, col) {
 function closeEditor() {
   editor.value.index = -1;
   editor.value.key = -1;
-}
-
-function eventTest(event) {
-  console.log(event)
 }
 
 // methods
@@ -304,15 +314,15 @@ function displayData() {
   if(mainDiv.value) scrollTop = mainDiv.value.scrollTop;
 
   let startIndex = Math.floor(
-    Math.max(0, (scrollTop - loadSizeHeight.value)) / props.maxRowHeight
+    Math.max(0, (scrollTop - loadSizeHeight.value)) / props.vRowHeight
   ); // max(0, (현재스크롤위치 - display되는 높이)) / 행의 높이
   let endIndex = Math.ceil(
-    Math.min(totalScrollableHeight.value, (scrollTop + loadSizeHeight.value)) / props.maxRowHeight
+    Math.min(totalScrollableHeight.value, (scrollTop + loadSizeHeight.value)) / props.vRowHeight
   ); // min(전체스크롤길이, (현재스크롤위치 + display되는 높이)) / 행의 높이
 
   displayedList.value = sortedFilteredList.value.slice(startIndex, endIndex + 1);
-  topBufferDiv.height = startIndex * props.maxRowHeight + 'px';
-  bottomBufferDiv.height = Math.max(0, (sortedFilteredList.value.length - endIndex - 1) * props.maxRowHeight) + 'px';
+  topBufferDiv.height = startIndex * props.vRowHeight + 'px';
+  bottomBufferDiv.height = Math.max(0, (sortedFilteredList.value.length - endIndex - 1) * props.vRowHeight) + 'px';
 
   if(!watcher.on) toggleWatcher(true);
 }
@@ -347,7 +357,9 @@ function doSortFilter(col) {
 
   // 필터 실행
   // grid 상단 filterText
+  let doFilter = false;
   if(searchText.value.length > 0) {
+    doFilter = true;
     sortedFilteredList.value = sortedFilteredList.value.filter(item => {
       let rtn = false;
       headers.value.forEach(value => {
@@ -358,6 +370,7 @@ function doSortFilter(col) {
   }
   // grid Header filterList
   if(filterList.value.length > 0) {
+    doFilter = true;
     sortedFilteredList.value = sortedFilteredList.value.filter(item => {
       let rtn = true;
       filterList.value.forEach(value => {
@@ -367,7 +380,9 @@ function doSortFilter(col) {
     });
   }
   // 필터 실행되지 않은 경우에는
-  if(!(searchText.value.length > 0 || filterList.value.length > 0)) {
+  if(doFilter) {
+    //필터 실행 된 경우 스크롤 스로틀링 문제 때문에 그냥 최상단으로 이동
+    mainDiv.value.scrollTop = 0;
     unFilterList = [...sortedFilteredList.value]; // unFilterList에 보존
   }
   // FILTER END
@@ -542,7 +557,7 @@ const watcher = {
 };
 function toggleWatcher(bool) {
   watcher.on = bool;
-  if(bool) {
+  if(bool && !props.readonly) {
     watcher.default = watch(sortedFilteredList, () => {
       let selectedIndex = sortedFilteredList.value.findIndex((value) => value == selectedRow.value);
       if(selectedIndex == -1) return; //처음 selected 없을때 error
@@ -553,14 +568,14 @@ function toggleWatcher(bool) {
     if(props.watcherList) {
       props.watcherList.forEach((value) => {
         watcher[value] = watch(() => {
-          if(selectedRow.value.pGridUniqueIndex) return sortedFilteredList.value[selectedRow.value.pGridUniqueIndex][value]; 
+          if(selectedRow.value.pGridUniqueIndex > -1) return sortedFilteredList.value[selectedRow.value.pGridUniqueIndex][value]; 
         }, (val, oldVal) => {
           if(oldVal) {
-            emit('onValueChange', {
+            emit('valueChange', {
               val: val,
               oldVal: oldVal,
-              selected: selectedRow.value,
               column: value,
+              selected: selectedRow.value,
             });
           }
         });

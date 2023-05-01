@@ -65,6 +65,11 @@
   bottom: 0;
   z-index: 1;
 }
+.mainDiv table tbody tr td div {
+  display: flex;
+  justify-content : center;
+  align-items: center;
+}
 .mainDiv table tbody tr:nth-child(odd) td {
   background-color: rosybrown;
 }

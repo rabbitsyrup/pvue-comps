@@ -1,12 +1,10 @@
 <template>
   <PGrid ref="PGrid"
-    title="Multi-Row Grid"
+    title="Multi Header Grid"
     width="700"
     :headerGroups="headerGroups"
     :height="300"
     :codeList="codeList"
-    :max-row-height="26"
-    :v-panel-size="1"
   />
   <a href="javascript:;" @click="getData">getData</a>
   <div>
@@ -15,6 +13,7 @@
       {{ out }}
     </div>
   </div>
+  <hr>
   <a href="javascript:;" @click="getUnFilterData">getUnFilterData</a>
   <div>
     <br>
@@ -22,8 +21,6 @@
       {{ out }}
     </div>
   </div>
-  <PSelect v-model="co" :items="codeList['country']" code="cd" name="cd_nm"/>
-  {{ co }}
 </template>
 
 <script>
