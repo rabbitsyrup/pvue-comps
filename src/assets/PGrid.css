@@ -1,10 +1,9 @@
-/* grid layout var 
-  높이들은 계산된 값이므로 수정할 경우 아래 값들을 수정해야 함
-  하드코딩 하면 기능적으로 문제가 될 가능성이 있음
+/* 
+  grid layout var 
 */
 :root {
   --toolbar-height: 30px; 
-  /* thead th의 높이 header 고정하는 계산에 사용함 */
+  /* grid 상단 toolbar 높이 */
   --thead-tr-height: 30px; 
-  /* thead th의 높이 header 고정하는 계산에 사용함 */
+  /* thead th의 높이 */
 }

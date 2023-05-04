@@ -1,6 +1,6 @@
  /* 
   var 함수에 쓰이는 변수들은
-  @/assets/PGrid.css 파일에서 수정 필요
+  @/assets/PGrid.css 파일에서 수정
  */
 .vertical-bar {
   padding: 0;
@@ -8,7 +8,23 @@
   width: 1px;
   height: 70%;
   opacity: 50%;
-  background-color: var(--color-text);
+  background-color: var(--color-text); /* 예제 proj css color, 중요 변수 아님 */
+}
+
+.icon-on {
+  opacity: 100%;
+  color: lightgoldenrodyellow;
+}
+.icon-off {
+  opacity: 30%;
+}
+.icon-off:hover {
+  opacity: 100%;
+}
+
+.icon-box {
+  width: 24px;
+  height: 24px;
 }
 
 .toolbar {
@@ -19,6 +35,7 @@
   float: left;
   height: var(--toolbar-height);
   display: flex;
+  padding-left: 10px;
   justify-content : left;
   align-items: center;
 }
@@ -30,80 +47,62 @@
   align-items: center;
 }
 
-.mainDiv {
+.grid-container {
   overflow: auto;
 }
-.mainDiv table { 
+.grid-container table { 
   border-collapse: collapse;
   width: 100%; 
 }
-.mainDiv table thead tr th {
+.grid-container table thead tr th {
   height: var(--thead-tr-height);
   background-color: #42b983;
   opacity: 100%;
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 2;
   color: lightgoldenrodyellow;
 }
-.mainDiv table thead tr:nth-child(2) th {
+.grid-container table thead tr:nth-child(2) th {
   top: var(--thead-tr-height);
 }
-.mainDiv table thead tr:nth-child(3) th {
+.grid-container table thead tr:nth-child(3) th {
   top: calc(var(--thead-tr-height) * 2);
 }
-.mainDiv table thead tr:nth-child(4) th {
+.grid-container table thead tr:nth-child(4) th {
   top: calc(var(--thead-tr-height) * 3);
 }
-.mainDiv table thead tr:nth-child(5) th {
+.grid-container table thead tr:nth-child(5) th {
   top: calc(var(--thead-tr-height) * 4);
 }
-.mainDiv table tfoot tr td {
+.grid-container table thead tr th div {
+  display: flex;
+  justify-content : center;
+  align-items: center;
+}
+.grid-container table tbody tr td div {
+  display: flex;
+  align-items: center;
+}
+.grid-container table tbody tr:nth-child(odd) td {
+  background-color: rosybrown;
+}
+.grid-container table tbody tr:nth-child(even) td {
+  background-color: lightslategrey;
+}
+.grid-container table tbody tr:hover td {
+  background-color: rgb(155, 207, 255);
+}
+.grid-container table tbody tr td.selected {
+  background-color: rgb(155, 207, 255);
+}
+.grid-container table tbody tr td.deleted {
+  text-decoration: line-through;
+}
+.grid-container table tfoot tr td {
   background-color: #42b983;
   opacity: 100%;
   position: sticky;
   bottom: 0;
-  z-index: 1;
-}
-.mainDiv table tbody tr td div {
-  display: flex;
-  justify-content : center;
-  align-items: center;
-}
-.mainDiv table tbody tr:nth-child(odd) td {
-  background-color: rosybrown;
-}
-.mainDiv table tbody tr:nth-child(even) td {
-  background-color: lightslategrey;
-}
-.mainDiv table tbody tr:hover td {
-  background-color: rgb(155, 207, 255);
-}
-.mainDiv table tbody tr td.selected {
-  background-color: rgb(155, 207, 255);
-}
-.mainDiv table tbody tr td.deleted {
-  text-decoration: line-through;
-}
-
-.header-th {
-  display: flex;
-  justify-content : center;
-  align-items: center;
-}
-
-.icon-on {
-  opacity: 100%;
-  color: lightgoldenrodyellow;
-}
-.icon-off {
-  opacity: 50%;
-}
-.icon-off:hover {
-  opacity: 100%;
-}
-
-.icon-box {
-  width: 24px;
-  height: 24px;
+  z-index: 2;
 }

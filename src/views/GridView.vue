@@ -5,13 +5,15 @@
     :headerGroups="headerGroups"
     :height="500"
     row-height="26px"
-    :v-row-height="26"
+    :ex-col-width="30"
+    :v-row-height="30"
     :v-panel-size="1"
     :codeList="codeList"
     :readonly="readonly"
     :no-filter="noFilter"
     :no-add="noAdd"
     :no-delete="noDelete"
+    :show-sum-on-footer="true"
   />
   props 설명<hr>
   <a href="javascript:;" @click="noFilter = !noFilter">no-filter</a> 필터 제거<br>
@@ -40,11 +42,11 @@ export default {
     data: [],
     headerGroups: [
       [
-        { title: 'NO', key: 'no', dataType: 'number', align: 'center', width: 80, editType: 'text', } ,
-        { title: 'NAME', key: 'name', dataType: 'string', align: 'center', width: 100, editType: 'text', },
-        { title: 'NICKNAME', key: 'nickname', dataType: 'string', align: 'right', editType: 'text', },
-        { title: 'AGE', key: 'age', dataType: 'number', align: 'center', width: 80, editType: 'text', },
-        { title: 'COUNTRY', key: 'country', dataType: 'string', align: 'center', width: 100, 
+        { title: 'NO', key: 'no', dataType: 'number', align: 'center', width: 80, editType: 'text', sumType: 'sum' } ,
+        { title: 'NAME', key: 'name', dataType: 'string', align: 'center', width: 100, editType: 'text', sumType: 'text', sumText: '-', },
+        { title: 'NICKNAME', key: 'nickname', dataType: 'string', align: 'right', editType: 'text', sumType: 'text', sumText: '평균 : ', },
+        { title: 'AGE', key: 'age', dataType: 'number', align: 'center', width: 80, editType: 'text', sumType: 'avg', },
+        { title: 'COUNTRY', key: 'country', dataType: 'string', align: 'center', width: 100, sumType: 'text',
           editType: 'select', codeList: 'country', codeValue: 'cd', codeTitle: 'cd_nm', }, 
           // defalut codeList는 key 값과 같음, codeValue와 codeTitle 값의 디폴트 값은 각각 cd, cd_nm
       ]

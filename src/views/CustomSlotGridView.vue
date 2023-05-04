@@ -1,10 +1,11 @@
 <template>
   <PGrid ref="PGrid"
     title="Custom Slot Grid"
-    width="800"
+    width="500"
     :headerGroups="headerGroups"
     :height="300"
     :codeList="codeList"
+    :fixed-row="1"
     row-height="26px"
     :watcherList="['nickname']"
     @valueChange="onValueChange"
@@ -63,11 +64,11 @@ export default {
       [ // row 1 (top row)
         { title: 'NO', key: 'no', dataType: 'number', width: 100, align: 'center', },
         { title: 'INFORMATION', grouping: {colspan: 3} },
-        { title: 'COUNTRY', key: 'country', dataType: 'string', align: 'center', width: 100, editType: 'select' },
-        { title: 'CITY', key: 'city', dataType: 'string', align: 'center', width: 100, customSlot: true, },
+        { title: 'COUNTRY', key: 'country', dataType: 'string', align: 'center', width: 150, editType: 'select' },
+        { title: 'CITY', key: 'city', dataType: 'string', align: 'center', width: 120, customSlot: true, },
       ],
       [ // row 2 (second row)
-        { title: 'NAME', key: 'name', dataType: 'string', align: 'center', editType: 'text', },
+        { title: 'NAME', key: 'name', dataType: 'string', width: 180, align: 'center', editType: 'text', },
         { title: 'AGE', key: 'age', dataType: 'number', align: 'center', },
         { title: 'NICKNAME', key: 'nickname', dataType: 'string', width: 200, 
           align: 'right', editType: 'text', },
